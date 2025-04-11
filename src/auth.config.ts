@@ -6,6 +6,7 @@ import { LoginSchema } from "./schema";
 import bcryptjs from "bcryptjs";
 import { getCurrentUserByEmail } from "./actions/user";
 import { ZodError } from "zod";
+import { IUser } from "./model/UserModel";
 
 class CustomError extends CredentialsSignin {
   constructor(code: string) {
@@ -24,7 +25,7 @@ export default {
     }),
     Credentials({
       async authorize(credentials) {
-        let user;
+        let user: IUser | null = null;
         let password: string = "";
 
         try {

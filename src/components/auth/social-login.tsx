@@ -1,9 +1,9 @@
 import React from "react";
 import { signIn } from "next-auth/react";
-import { FcGoogle } from "react-icons/fc";
 
 import { Button } from "../ui/button";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import GoogleIcon from "../ui/google-icon";
 
 const SocialLogin = () => {
   const handleGoogleLogin = async () => {
@@ -18,7 +18,7 @@ const SocialLogin = () => {
         variant="outline"
         onClick={handleGoogleLogin}
       >
-        <FcGoogle size={50} className="size-20" />
+        <GoogleIcon className="size-20" />
         <span>Continue with Google</span>
       </Button>
     </div>

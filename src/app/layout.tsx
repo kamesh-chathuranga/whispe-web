@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono, Poppins } from "next/font/google";
 import SyncUserStore from "@/components/user-store";
 import { auth } from "@/auth";
+import { connectToDatabase } from "@/lib/mongodb";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -25,6 +26,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
+  await connectToDatabase();
 
   return (
     <html lang="en">

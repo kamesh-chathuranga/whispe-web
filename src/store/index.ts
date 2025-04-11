@@ -1,6 +1,5 @@
-import { User } from "@prisma/client";
+import { User } from "@/types/types";
 import React from "react";
-
 import { Socket } from "socket.io-client";
 import { create } from "zustand";
 

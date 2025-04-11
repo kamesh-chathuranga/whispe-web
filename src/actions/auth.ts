@@ -6,9 +6,9 @@ import { signIn } from "@/auth";
 import { LoginSchema } from "@/schema";
 import { RegisterSchema } from "@/schema";
 import bcriptjs from "bcryptjs";
-import { prisma } from "@/lib/prismaClient";
 import { getCurrentUserByEmail } from "./user";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import { User } from "../model/UserModel";
 
 export const loginCurrentUser = async (
   formdata: z.infer<typeof LoginSchema>
@@ -59,20 +59,17 @@ export const registerUser = async (
     }
 
     const { name, email, password } = validateFormField.data;
-    const hashedPassword = await bcriptjs.hash(password, 10);
-
     const existingUser = await getCurrentUserByEmail(email);
 
     if (existingUser) {
       return { status: 409, success: false, message: "Email already in use" };
     }
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
+    const hashedPassword = await bcriptjs.hash(password, 10);
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
     });
 
     if (!user) {
@@ -93,7 +90,7 @@ export const registerUser = async (
       return {
         status: 500,
         success: false,
-        message: "An error occurred while creating the user",
+        message: "Failed to create user",
       };
     }
     throw error;

@@ -1,9 +1,6 @@
 "use client";
 
 import React, { useEffect } from "react";
-
-import { RiChatNewLine } from "react-icons/ri";
-import { IoFilterSharp } from "react-icons/io5";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -13,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { ListFilter, MessageSquare } from "lucide-react";
 
 const ChatTopBar = () => {
   // const {
@@ -62,7 +60,7 @@ const ChatTopBar = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost">
-              <RiChatNewLine size={22} />
+              <MessageSquare size={22} />
             </Button>
           </DropdownMenuTrigger>
 
@@ -83,7 +81,7 @@ const ChatTopBar = () => {
           </DropdownMenuContent>
         </DropdownMenu>
         <Button variant="ghost">
-          <IoFilterSharp size={22} />
+          <ListFilter size={22} />
         </Button>
       </div>
     </div>

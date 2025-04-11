@@ -93,7 +93,7 @@ const SideBar = () => {
         <Button variant="ghost" size="icon">
           <Avatar className="w-8 h-8">
             <AvatarImage
-              src={currentUser?.image ?? undefined}
+              src={currentUser?.avatarUrl ?? undefined}
               alt="User Avatar"
             />
             <AvatarFallback>
