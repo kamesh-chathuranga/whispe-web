@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Poppins } from "next/font/google";
-import SyncUserStore from "@/components/user-store";
-import { auth } from "@/auth";
-import { connectToDatabase } from "@/lib/mongodb";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -25,16 +23,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-  await connectToDatabase();
-
   return (
     <html lang="en">
       <body
         className={`${poppins.className} ${geistMono.variable} antialiased`}
       >
-        <SyncUserStore session={session} />
         {children}
+        <Toaster />
       </body>
     </html>
   );

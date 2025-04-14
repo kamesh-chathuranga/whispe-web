@@ -1,12 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CredentialsSignin, type NextAuthConfig } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
-import { LoginSchema } from "./schema";
-import bcryptjs from "bcryptjs";
-import { getCurrentUserByEmail } from "./actions/user";
-import { ZodError } from "zod";
-import { IUser } from "./model/UserModel";
+import CredentialsProvider from "next-auth/providers/credentials";
+import setCookieParser from "set-cookie-parser";
+import API from "./lib/axios";
+import { cookies } from "next/headers";
+
+type sameSite = true | false | "lax" | "strict" | "none" | undefined;
 
 class CustomError extends CredentialsSignin {
   constructor(code: string) {
@@ -17,45 +15,67 @@ class CustomError extends CredentialsSignin {
   }
 }
 
-export default {
+export const authConfig = {
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
-    Credentials({
+    CredentialsProvider({
+      credentials: {
+        email: {},
+        password: {},
+      },
       async authorize(credentials) {
-        let user: IUser | null = null;
-        let password: string = "";
+        if (credentials === null) return null;
 
         try {
-          const validateField = LoginSchema.safeParse(credentials);
+          const response = await API.post(
+            "/auth/login",
+            { email: credentials.email, password: credentials.password },
+            {
+              headers: { "Content-Type": "application/json" },
+            }
+          );
 
-          if (validateField.success) {
-            const { email, password: parsedPassword } = validateField.data;
-            password = parsedPassword;
-
-            user = await getCurrentUserByEmail(email);
+          if (response.statusText !== "OK" || response.status !== 200) {
+            return null;
           }
-        } catch (error: any) {
-          if (error instanceof ZodError) {
-            throw new CustomError("Invalid schema");
-          }
-          throw new CustomError(error.message);
+
+          const parsedResponse = await response.data;
+
+          const cookieStore = await cookies();
+          const cookieCollection = setCookieParser(
+            response.headers["set-cookie"]!
+          );
+          cookieCollection.forEach((cookie) =>
+            cookieStore.set(cookie.name, cookie.value, {
+              ...cookie,
+              sameSite: cookie.sameSite as sameSite,
+            })
+          );
+
+          const accessToken = cookieStore.get("access_token")?.value;
+          const refreshToken = cookieStore.get("refresh_token")?.value;
+
+          return {
+            accessToken,
+            refreshToken,
+            email: parsedResponse.email,
+            name: parsedResponse.name,
+            id: parsedResponse.id,
+          };
+        } catch {
+          return null;
         }
-
-        if (!user || !user.password) {
-          throw new CustomError("Invalid credentials");
-        }
-
-        const passwordMatch = await bcryptjs.compare(password, user.password);
-
-        if (!passwordMatch) {
-          throw new CustomError("Invalid credentials");
-        }
-
-        return user;
       },
     }),
+    // GoogleProvider({
+    //     clientId: process.env.GOOGLE_CLIENT_ID,
+    //     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    //     authorization: {
+    //         params: {
+    //             prompt: "consent",
+    //             access_type: "offline",
+    //             response_type: "code",
+    //         },a
+    //     },
+    // }),
   ],
 } satisfies NextAuthConfig;

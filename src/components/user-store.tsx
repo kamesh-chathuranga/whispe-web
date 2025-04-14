@@ -27,7 +27,7 @@ const SyncUserStore = ({ session }: SyncUserStoreProps) => {
           }
 
           const user: User = {
-            id: data.id,
+            id: data._id,
             name: data.name,
             email: data.email,
             avatarUrl: data.avatarUrl,

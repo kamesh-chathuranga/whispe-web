@@ -2,10 +2,7 @@
 
 import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { signOut } from "next-auth/react";
 import { Button } from "./ui/button";
-import { DEFAULT_SIGNOUT_REDIRECT } from "@/routes";
-import { revalidatePath } from "next/cache";
 import {
   LogOutIcon,
   MenuIcon,
@@ -17,6 +14,7 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store";
+import { logoutAction } from "@/actions/auth-actions";
 
 const sideBarData = [
   {
@@ -65,12 +63,7 @@ const SideBar = () => {
   const { currentUser } = useStore();
 
   const handleLogout = async () => {
-    try {
-      await signOut();
-      revalidatePath(DEFAULT_SIGNOUT_REDIRECT);
-    } catch (e) {
-      console.log("Error signing out", e);
-    }
+    await logoutAction();
   };
 
   return (

@@ -2,7 +2,6 @@ import React from "react";
 
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
 import Header from "./header";
-import SocialLogin from "./social-login";
 import BackButton from "./back-button";
 
 interface CardWrapperProps {
@@ -10,7 +9,6 @@ interface CardWrapperProps {
   headerLabel: string;
   backButtonText: string;
   backButtonHref: string;
-  showSocialLogin?: boolean;
 }
 
 const CardWrapper = ({
@@ -18,7 +16,6 @@ const CardWrapper = ({
   headerLabel,
   backButtonText,
   backButtonHref,
-  showSocialLogin,
 }: CardWrapperProps) => {
   return (
     <Card className="w-[400px] shadow-md">
@@ -26,11 +23,6 @@ const CardWrapper = ({
         <Header label={headerLabel} />
       </CardHeader>
       <CardContent>{children}</CardContent>
-      {showSocialLogin && (
-        <CardFooter>
-          <SocialLogin />
-        </CardFooter>
-      )}
       <CardFooter>
         <BackButton href={backButtonHref} label={backButtonText} />
       </CardFooter>

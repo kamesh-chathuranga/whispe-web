@@ -2,8 +2,6 @@ import React from "react";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
-import { loginCurrentUser } from "@/actions/auth";
 import { LoginSchema } from "../../schema";
 import CardWrapper from "./card-wrapper";
 import {
@@ -18,7 +16,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import FormError from "../form-error";
 import { Loader } from "lucide-react";
-import { ServerActionResponse } from "@/types/types";
+import { loginAction } from "@/actions/auth-actions";
 
 const LoginForm = () => {
   const [error, setError] = React.useState<string | undefined>("");
@@ -32,12 +30,11 @@ const LoginForm = () => {
   });
 
   const onSubmit = async (formData: z.infer<typeof LoginSchema>) => {
-    setError('')
-    const response: ServerActionResponse | undefined = await loginCurrentUser(
-      formData
-    );
+    setError("");
 
-    if (response?.status !== 200 && !response?.success) {
+    const response = await loginAction(formData);
+
+    if (!response?.success && response?.status !== 200) {
       setError(response?.message);
     }
   };
@@ -47,7 +44,6 @@ const LoginForm = () => {
       headerLabel="Welcome Back"
       backButtonText="Don't have an account?"
       backButtonHref="/auth/register"
-      showSocialLogin
     >
       <Form {...form}>
         <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>

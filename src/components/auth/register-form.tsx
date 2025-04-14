@@ -16,12 +16,13 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import FormError from "../form-error";
-import { loginCurrentUser, registerUser } from "@/actions/auth";
-import { ServerActionResponse } from "@/types/types";
+import { loginAction, registerAction } from "@/actions/auth-actions";
 import { Loader } from "lucide-react";
+// import { useStore } from "@/store";
 
 const RegisterForm = () => {
   const [error, setError] = React.useState<string | undefined>("");
+  // const { setCurrentUser } = useStore();
 
   const form = useForm<z.infer<typeof RegisterSchema>>({
     resolver: zodResolver(RegisterSchema),
@@ -34,16 +35,21 @@ const RegisterForm = () => {
 
   const onSubmit = async (formData: z.infer<typeof RegisterSchema>) => {
     setError("");
-    const response: ServerActionResponse = await registerUser(formData);
+    const response = await registerAction(formData);
 
-    if (response?.status === 200 && response?.success) {
+    if (response.status === 201 && response.success) {
       const formValues = {
         email: formData.email,
         password: formData.password,
       };
-      await loginCurrentUser(formValues);
+
+      const response = await loginAction(formValues);
+
+      if (!response?.success && response?.status !== 200) {
+        setError(response?.message);
+      }
     } else {
-      setError(response?.message);
+      setError(response.message);
     }
   };
 
@@ -52,7 +58,6 @@ const RegisterForm = () => {
       headerLabel="Create an Account"
       backButtonText="Already have an account?"
       backButtonHref="/auth/login"
-      showSocialLogin
     >
       <Form {...form}>
         <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>

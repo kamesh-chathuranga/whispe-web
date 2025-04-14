@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import UserCard from "./user-card";
-import { getAllUsers } from "@/actions/user";
 import { useStore } from "@/store";
 import { ScrollArea } from "../ui/scroll-area";
 import { UserPlus } from "lucide-react";
+import axios from "axios";
 
 interface Person {
   id: string;
@@ -22,8 +22,13 @@ const UserCardContainer = () => {
     (async () => {
       try {
         if (!currentUser?.id) return;
-        const response = await getAllUsers(currentUser.id);
-        setProfileCollection(response);
+        
+        const { data } = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/users`,
+          { data: { userId: "vvvvvvv" } }
+        );
+
+        // setProfileCollection(response);
       } catch (error) {
         console.error("Error fetching people:", error);
       }

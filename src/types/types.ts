@@ -1,9 +1,3 @@
-export interface ServerActionResponse {
-  status: number;
-  success: boolean;
-  message: string;
-}
-
 export interface User {
   id: string;
   name: string;
@@ -12,4 +6,13 @@ export interface User {
   isOnline: boolean;
   lastSeen: Date;
   friends: string[];
+}
+
+export interface BaseResponse {
+  message: string;
+  status: number | undefined;
+}
+
+export interface LoginActionResponse extends BaseResponse {
+  data: User | null;
 }
