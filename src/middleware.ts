@@ -1,16 +1,14 @@
-import { authConfig } from "@/auth.config";
-import NextAuth from "next-auth";
+import { NextRequest } from "next/server";
 import {
   apiAuthPrefix,
   authRoutes,
   DEFAULT_LOGIN_REDIRECT,
   publicRoutes,
 } from "./routes";
+import { cookies } from "next/headers";
 
-const { auth } = NextAuth(authConfig);
-
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
+export default async function middleware(req: NextRequest) {
+  const isLoggedIn = !!(await cookies()).get("refreshToken")?.value;
   const { nextUrl } = req;
 
   const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
@@ -34,7 +32,7 @@ export default auth((req) => {
   }
 
   return;
-});
+}
 
 export const config = {
   matcher: [

@@ -16,13 +16,17 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import FormError from "../form-error";
-import { loginAction, registerAction } from "@/actions/auth-actions";
 import { Loader } from "lucide-react";
-// import { useStore } from "@/store";
+import { useStore } from "@/store";
+import API from "@/lib/axios";
+import { useRouter } from "next/navigation";
+import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import { AxiosError } from "axios";
 
 const RegisterForm = () => {
   const [error, setError] = React.useState<string | undefined>("");
-  // const { setCurrentUser } = useStore();
+  const { setCurrentUser } = useStore();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof RegisterSchema>>({
     resolver: zodResolver(RegisterSchema),
@@ -35,21 +39,32 @@ const RegisterForm = () => {
 
   const onSubmit = async (formData: z.infer<typeof RegisterSchema>) => {
     setError("");
-    const response = await registerAction(formData);
+    try {
+      const response = await API.post("/auth/register", formData);
 
-    if (response.status === 201 && response.success) {
-      const formValues = {
-        email: formData.email,
-        password: formData.password,
-      };
+      if (response.status == 201 && response.data) {
+        const response = await API.post("/auth/login", {
+          email: formData.email,
+          password: formData.password,
+        });
 
-      const response = await loginAction(formValues);
-
-      if (!response?.success && response?.status !== 200) {
-        setError(response?.message);
+        if (response.status == 200 && response.data) {
+          setCurrentUser(response.data);
+          router.replace(DEFAULT_LOGIN_REDIRECT);
+        } else {
+          setError("Incorrect email or password");
+        }
+      } else {
+        setError("Failed to create an account. Please try again.");
       }
-    } else {
-      setError(response.message);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        setError(error.response?.data.message);
+      } else {
+        setError(
+          "An error occurred while creating an account. Please try again."
+        );
+      }
     }
   };
 

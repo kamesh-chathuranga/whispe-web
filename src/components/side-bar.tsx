@@ -14,7 +14,10 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useStore } from "@/store";
-import { logoutAction } from "@/actions/auth-actions";
+import API from "@/lib/axios";
+import { DEFAULT_SIGNOUT_REDIRECT } from "@/routes";
+import { toast } from "@/hooks/use-toast";
+import { AxiosError } from "axios";
 
 const sideBarData = [
   {
@@ -60,10 +63,32 @@ const NavigationButton = ({ icon, path }: NavigationButtonProps) => {
 };
 
 const SideBar = () => {
-  const { currentUser } = useStore();
+  const { currentUser, setCurrentUser } = useStore();
+  const router = useRouter();
 
   const handleLogout = async () => {
-    await logoutAction();
+    try {
+      const response = await API.post("/auth/logout", undefined);
+
+      if (response.status == 200 && response.data) {
+        setCurrentUser(null);
+        router.replace(DEFAULT_SIGNOUT_REDIRECT);
+      } else {
+        toast({ description: "Failed to logout user", variant: "destructive" });
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast({
+          description: error.response?.data.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          description: "An error occurred while logging out. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
   return (

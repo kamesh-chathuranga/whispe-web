@@ -1,34 +1,42 @@
+import { DEFAULT_SIGNOUT_REDIRECT } from "@/routes";
 import axios from "axios";
 
 const options = {
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
   withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
 };
 
 const API = axios.create(options);
 
-// export const APIRefresh = axios.create(options);
-// APIRefresh.interceptors.response.use((response) => response);
+API.interceptors.response.use(
+  (response) => response,
 
-// API.interceptors.response.use(
-//   (response) => {
-//     return response;
-//   },
-//   async (error) => {
-//     const { data, status } = error.response;
-//     console.log(data, status, '===========================');
+  async (error) => {
+    const originalRequest = error.config;
 
-//     if (data.message === "VALID_TOKEN_NOT_FOUND" && status === 401) {
-//       try {
-//         await APIRefresh.get("/auth/refresh");
-//         return APIRefresh(error.config);
-//       } catch {
-//         // window.location.href = "/";
-//       }
-//     }
+    if (
+      error.response?.status === 401 &&
+      error.response.data?.message === "ACCESS_TOKEN_NOT_VALID" &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
 
-//     return Promise.reject(error);
-//   }
-// );
+      try {
+        await API.post("/auth/refresh");
+
+        return API(originalRequest);
+      } catch {
+        if (typeof window !== "undefined") {
+          window.location.href = DEFAULT_SIGNOUT_REDIRECT;
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default API;

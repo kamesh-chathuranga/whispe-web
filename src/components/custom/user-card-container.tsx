@@ -5,7 +5,7 @@ import UserCard from "./user-card";
 import { useStore } from "@/store";
 import { ScrollArea } from "../ui/scroll-area";
 import { UserPlus } from "lucide-react";
-import axios from "axios";
+import API from "@/lib/axios";
 
 interface Person {
   id: string;
@@ -22,11 +22,10 @@ const UserCardContainer = () => {
     (async () => {
       try {
         if (!currentUser?.id) return;
-        
-        const { data } = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/users`,
-          { data: { userId: "vvvvvvv" } }
-        );
+
+        const { data } = await API.get("/users");
+
+        console.log(data);
 
         // setProfileCollection(response);
       } catch (error) {

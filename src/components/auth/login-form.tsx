@@ -16,10 +16,16 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import FormError from "../form-error";
 import { Loader } from "lucide-react";
-import { loginAction } from "@/actions/auth-actions";
+import API from "@/lib/axios";
+import { useStore } from "@/store";
+import { useRouter } from "next/navigation";
+import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import { AxiosError } from "axios";
 
 const LoginForm = () => {
   const [error, setError] = React.useState<string | undefined>("");
+  const { setCurrentUser } = useStore();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
@@ -32,10 +38,21 @@ const LoginForm = () => {
   const onSubmit = async (formData: z.infer<typeof LoginSchema>) => {
     setError("");
 
-    const response = await loginAction(formData);
+    try {
+      const response = await API.post("/auth/login", formData);
 
-    if (!response?.success && response?.status !== 200) {
-      setError(response?.message);
+      if (response.status == 200 && response.data) {
+        setCurrentUser(response.data);
+        router.replace(DEFAULT_LOGIN_REDIRECT);
+      } else {
+        setError("Incorrect email or password");
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        setError(error.response?.data.message);
+      } else {
+        setError("An error occurred while logging in. Please try again.");
+      }
     }
   };
 
