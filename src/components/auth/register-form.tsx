@@ -17,7 +17,6 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import FormError from "../form-error";
 import { Loader } from "lucide-react";
-import { useStore } from "@/store";
 import API from "@/lib/axios";
 import { useRouter } from "next/navigation";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
@@ -25,7 +24,6 @@ import { AxiosError } from "axios";
 
 const RegisterForm = () => {
   const [error, setError] = React.useState<string | undefined>("");
-  const { setCurrentUser } = useStore();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof RegisterSchema>>({
@@ -49,7 +47,6 @@ const RegisterForm = () => {
         });
 
         if (response.status == 200 && response.data) {
-          setCurrentUser(response.data);
           router.replace(DEFAULT_LOGIN_REDIRECT);
         } else {
           setError("Incorrect email or password");

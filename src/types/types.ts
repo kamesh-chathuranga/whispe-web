@@ -7,12 +7,3 @@ export interface User {
   lastSeen: Date;
   friends: string[];
 }
-
-export interface BaseResponse {
-  message: string;
-  status: number | undefined;
-}
-
-export interface LoginActionResponse extends BaseResponse {
-  data: User | null;
-}

@@ -24,7 +24,13 @@ const UserCard: React.FC<UserCardProps> = ({
     <Card className="w-56 shadow-md rounded-lg overflow-hidden h-fit">
       {/* Full-width Image */}
       <div className="w-full h-28 relative">
-        <Image src={imageUrl} alt={name} layout="fill" objectFit="cover" />
+        <Image
+          src={imageUrl}
+          alt={name}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
       </div>
 
       {/* User Name */}

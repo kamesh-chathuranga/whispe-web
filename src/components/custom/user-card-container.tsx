@@ -9,47 +9,48 @@ import API from "@/lib/axios";
 
 interface Person {
   id: string;
-  name: string | null;
-  image: string | null;
-  email: string | null;
+  name: string;
+  image?: string;
 }
 
 const UserCardContainer = () => {
   const { currentUser } = useStore();
   const [profilesCollection, setProfileCollection] = useState<Person[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       try {
         if (!currentUser?.id) return;
-
-        const { data } = await API.get("/users");
-
-        console.log(data);
-
-        // setProfileCollection(response);
+        setIsLoading(true);
+        const response = await API.get("/users");
+        setProfileCollection(response.data);
       } catch (error) {
         console.error("Error fetching people:", error);
+      } finally {
+        setIsLoading(false);
       }
     })();
   }, [currentUser?.id]);
 
-  return (
-    <ScrollArea className="h-full pb-14 pt-4">
-      <div className="flex flex-wrap gap-4 h-full ">
-        {Array.from({ length: 15 }, (_, index) => (
-          <UserCard
-            key={index}
-            name="Kamesh Chathuranga"
-            imageUrl="/sample.jpg"
-            text="Add Friend"
-            icon={<UserPlus />}
-            onClick={() => console.log("Add Friend clicked")}
-          />
-        ))}
-      </div>
-    </ScrollArea>
+  const content = isLoading ? (
+    <p>Loading...</p>
+  ) : (
+    <div className="flex flex-wrap gap-4 h-full ">
+      {profilesCollection.map((profile, i) => (
+        <UserCard
+          key={i}
+          name={profile.name}
+          imageUrl={profile.image || "/sample.jpg"}
+          text="Add Friend"
+          icon={<UserPlus />}
+          onClick={() => console.log("Add Friend clicked")}
+        />
+      ))}
+    </div>
   );
+
+  return <ScrollArea className="h-full pb-14 pt-4">{content}</ScrollArea>;
 };
 
 export default UserCardContainer;

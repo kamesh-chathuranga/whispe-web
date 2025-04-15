@@ -17,14 +17,12 @@ import { Button } from "../ui/button";
 import FormError from "../form-error";
 import { Loader } from "lucide-react";
 import API from "@/lib/axios";
-import { useStore } from "@/store";
 import { useRouter } from "next/navigation";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { AxiosError } from "axios";
 
 const LoginForm = () => {
   const [error, setError] = React.useState<string | undefined>("");
-  const { setCurrentUser } = useStore();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof LoginSchema>>({
@@ -42,7 +40,6 @@ const LoginForm = () => {
       const response = await API.post("/auth/login", formData);
 
       if (response.status == 200 && response.data) {
-        setCurrentUser(response.data);
         router.replace(DEFAULT_LOGIN_REDIRECT);
       } else {
         setError("Incorrect email or password");

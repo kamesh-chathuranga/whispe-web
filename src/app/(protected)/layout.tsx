@@ -8,6 +8,7 @@ import {
 import ChatTopBar from "@/components/chat-top-bar";
 import SearchBar from "@/components/search-bar";
 import ChatList from "@/components/chat/chat-list";
+import SyncUserStore from "@/components/sync-user-store";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <div className="flex h-screen w-screen max-h-screen max-w-full">
+      <SyncUserStore />
       <SideBar />
 
       <ResizablePanelGroup direction="horizontal" className="h-full ">
