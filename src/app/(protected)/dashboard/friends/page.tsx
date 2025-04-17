@@ -1,5 +1,5 @@
 import FriendRequestCardContainer from "@/components/custom/friend-request-card-container";
-import UserCardContainer from "@/components/custom/user-card-container";
+import ProfileCardContainer from "@/components/custom/profile-card-container";
 import SentRequestCardContainer from "@/components/custom/sent-request-card-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -21,7 +21,7 @@ export default function TabsDemo() {
         <FriendRequestCardContainer />
       </TabsContent>
       <TabsContent value="people-tab" className="h-full">
-        <UserCardContainer />
+        <ProfileCardContainer />
       </TabsContent>
       <TabsContent value="sent-request-tab" className="h-full">
         <SentRequestCardContainer />

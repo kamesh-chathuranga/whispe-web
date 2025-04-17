@@ -1,56 +1,40 @@
 "use client";
 
-import { calculateTime } from "@/lib/calculateTime";
-import { cn } from "@/lib/utils";
+import React, { useMemo } from "react";
+import ChatHeader from "./chat-header";
+import MessageContainer from "./message-container";
+import { usePathname } from "next/navigation";
 import { useStore } from "@/store";
-import React from "react";
-import MessageStatus from "./message-status";
+import MessageBar from "./message-bar";
 
 const ChatContainer = () => {
-  const { messages, currentChat, currentUser } = useStore();
+  const pathname = usePathname();
+  const segments = pathname?.split("/");
+  const chatId = segments && segments.length > 2 ? segments[2] : null;
+
+  const { chatList, currentUser } = useStore();
+
+  const currentChat = useMemo(
+    () => chatList.find((c) => c.id === chatId),
+    [chatList, chatId]
+  );
+
+  if (!chatId) {
+    return <div className="p-4">No chat selected.</div>;
+  }
+  if (!currentChat) {
+    return <div className="p-4">Loading chat...</div>;
+  }
 
   return (
-    <div className="flex-grow overflow-auto w-full h-[80vh]">
-      <div className="mx-10 my-6 h-full">
-        <div className="flex w-full h-full">
-          <div className="flex flex-col w-full overflow-y-auto gap-1  ">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex",
-                  message.authorId === currentChat?.id
-                    ? "justify-start"
-                    : "justify-end"
-                )}
-              >
-                {message.type === "text" && (
-                  <div
-                    className={cn(
-                      "px-2 py-[5px] text-sm rounded-md flex gap-4 items-center max-w-[45%]",
-                      message.authorId === currentChat?.id
-                        ? "bg-message-receive text-black"
-                        : "bg-message-send text-white"
-                    )}
-                  >
-                    <span className="break-all">{message.message}</span>
-                    <div className="flex gap-1 self-end items-end -mb-[6px] -mr-[2px] min-w-fit">
-                      <span className="pt-1 min-w-fit text-[9.5px] text-message-time">
-                        {calculateTime(message.createdAt)}
-                      </span>
-                      <span>
-                        {message.authorId === currentUser?.id && (
-                          <MessageStatus status={message.status} />
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col h-screen w-full">
+      <ChatHeader chat={currentChat} />
+      {/* <MessageContainer messages={} /> */}
+      <MessageBar
+        currentChat={currentChat}
+        currentUser={currentUser}
+        setMessage={() => {}}
+      />
     </div>
   );
 };

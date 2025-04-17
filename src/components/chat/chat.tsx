@@ -1,45 +1,47 @@
-"use client";
+'use client";';
 
-import React, { useEffect, useRef } from "react";
+import React from "react";
+import Link from "next/link";
+import { type Chat } from "@/types/types";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
+import { User } from "lucide-react";
+import Image from "next/image";
 
-import ChatHeader from "./chat-header";
-import MessageBar from "./message-bar";
-import ChatContainer from "./chat-container";
-import { io, Socket } from "socket.io-client";
-
-const Chat = () => {
-  const socketRef = useRef<Socket>(null);
-  const [isSocketEvent, setIsSocketEvent] = React.useState(false);
-
-//   useEffect(() => {
-//     if (currentUser) {
-//       socketRef.current = io("http://localhost:7000");
-//       socketRef.current.emit("addUser", currentUser.id);
-//       setSocket(socketRef);
-//     }
-//   }, [currentUser, setSocket]);
-
-//   useEffect(() => {
-//     if (socketRef.current && !isSocketEvent) {
-//       socketRef.current.on("received-message", (message) => {
-//         console.log(message);
-//         setMessage(message);
-//       });
-//       setIsSocketEvent(true);
-//     }
-//   }, [isSocketEvent, setMessage]);
+const Chat = ({ id, avatarUrl, lastMessage, partnerName }: Chat) => {
+  const pathName = usePathname();
 
   return (
-    <div className="flex flex-col h-screen w-full">
-      {/* <ChatHeader currentChat={currentChat} /> */}
-      <ChatContainer />
-      {/* <MessageBar
-        curentChat={currentChat}
-        currentUser={currentUser}
-        socket={socketRef}
-        setMessage={setMessage}
-      /> */}
-    </div>
+    <Link
+      href={`/chat/${id}`}
+      className={cn(
+        "w-full h-full p-3 mb-1.5 flex border border-gray-200/50 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition duration-200 ease-in-out",
+        pathName === `/chat/${id}` && "bg-gray-100 border-gray-300"
+      )}
+    >
+      <div className="flex-1">
+        <div className="flex items-center">
+          <div className="size-11 rounded-full relative flex items-center justify-center overflow-hidden border">
+            {avatarUrl ? (
+              <Image
+                src={avatarUrl}
+                alt={`${partnerName}'s avatar`}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <User />
+            )}
+          </div>
+          <div className="ml-3 flex-1">
+            <p className="text-sm font-medium text-gray-900">{partnerName}</p>
+            <p className="mt-1 text-sm text-gray-500">
+              {lastMessage ? lastMessage : "You are now connected"}
+            </p>
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 };
 

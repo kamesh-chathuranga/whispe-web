@@ -5,15 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import Image from "next/image";
 
-interface UserCardProps {
+interface ProfileCardProps {
+  id: string;
   name: string;
-  imageUrl: string;
+  imageUrl: string | undefined;
   text: string;
   icon: React.ReactNode;
-  onClick: () => void;
+  onClick: (userId: string) => void;
 }
 
-const UserCard: React.FC<UserCardProps> = ({
+const ProfileCard: React.FC<ProfileCardProps> = ({
+  id,
   name,
   imageUrl,
   text,
@@ -25,7 +27,7 @@ const UserCard: React.FC<UserCardProps> = ({
       {/* Full-width Image */}
       <div className="w-full h-28 relative">
         <Image
-          src={imageUrl}
+          src={imageUrl || "/sample.jpg"}
           alt={name}
           fill
           className="object-cover"
@@ -42,7 +44,7 @@ const UserCard: React.FC<UserCardProps> = ({
       <CardFooter className="p-3 pt-0">
         <Button
           className="flex-1 bg-blue-600 hover:bg-blue-700"
-          onClick={onClick}
+          onClick={() => onClick(id)}
         >
           {icon}
           {text}
@@ -52,4 +54,4 @@ const UserCard: React.FC<UserCardProps> = ({
   );
 };
 
-export default UserCard;
+export default ProfileCard;
