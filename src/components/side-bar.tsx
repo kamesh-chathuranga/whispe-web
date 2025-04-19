@@ -76,6 +76,8 @@ const SideBar = () => {
     friendRequests,
     chatList,
     setChatList,
+    messages,
+    setMessages,
   } = useStore();
   // const [unseenNotificationCount, setUnseenRequestCount] = useState(0);
   const router = useRouter();
@@ -104,7 +106,7 @@ const SideBar = () => {
     if (!socket || !currentUser?.id) return;
     // socket.emit("join", currentUser?.id);
 
-    socket.on("friendRequestReceived", (request) => {
+    socket.on("friendRequest:received", (request) => {
       const shouldNotified = pathName !== "/dashboard/friends";
       const newRequest: ReceivedFriendRequest = {
         id: request._id,
@@ -129,6 +131,11 @@ const SideBar = () => {
     });
 
     socket.on("message:new", (message: Message) => {
+      const chat = chatList.map((chat) =>
+        chat._id === message.chat ? { ...chat, lastMessage: message } : chat
+      );
+      setChatList(chat);
+      setMessages([...messages, message]);
       const shouldNotified =
         pathName !== `/chat/${message.chat}` &&
         currentUser.id !== message.sender._id;
@@ -146,27 +153,21 @@ const SideBar = () => {
         ),
         { position: "top-center" }
       );
-
-      const chat = chatList.map((chat) =>
-        chat.id === message.chat
-          ? { ...chat, lastMessage: message.content }
-          : chat
-      );
-
-      setChatList(chat);
     });
 
     return () => {
-      socket.off("friendRequestReceived");
+      socket.off("friendRequest:received");
       socket.off("message:new");
     };
   }, [
     chatList,
     currentUser?.id,
     friendRequests,
+    messages,
     pathName,
     setChatList,
     setFriendRequests,
+    setMessages,
   ]);
 
   return (

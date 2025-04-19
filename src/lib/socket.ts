@@ -14,13 +14,13 @@ const socket = io(process.env.NEXT_PUBLIC_API_BASE_HOST!, {
 });
 
 socket.on("connect_error", async (err) => {
-  console.error("Socket auth error:", err.message);
+  console.log("Socket auth error:", err.message);
   if (err.message === "Authentication error") {
     try {
       await API.post("/auth/refresh");
       socket.connect();
     } catch {
-      console.error("Refresh failed, redirecting to login");
+      console.log("Refresh failed, redirecting to login");
       if (typeof window !== "undefined") {
         window.location.href = DEFAULT_SIGNOUT_REDIRECT;
       }

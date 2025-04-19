@@ -2,11 +2,11 @@ import React from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
-import { Chat } from "@/types/types";
+import { SingleChat } from "@/types/types";
 import { Phone, Search, UserIcon, Video } from "lucide-react";
 
 interface ChatHeaderProps {
-  chat: Chat;
+  chat: SingleChat;
 }
 
 const ChatHeader = ({ chat }: ChatHeaderProps) => {
@@ -14,13 +14,13 @@ const ChatHeader = ({ chat }: ChatHeaderProps) => {
     <div className="flex items-center justify-between p-3 h-[10%] border-b border-gray-200">
       <div className="flex items-center gap-x-4">
         <Avatar>
-          <AvatarImage src={chat.avatarUrl} />
+          <AvatarImage src={chat.partner.avatarUrl} />
           <AvatarFallback>
             <UserIcon />
           </AvatarFallback>
         </Avatar>
         <div className="flex flex-col">
-          <span className="font-medium ">{chat.partnerName}</span>
+          <span className="font-medium ">{chat.partner.name}</span>
           <span className="text-xs text-emerald-500">online</span>
         </div>
       </div>

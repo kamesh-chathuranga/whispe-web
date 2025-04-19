@@ -7,20 +7,18 @@ import MessageContainer from "./message-container";
 import { usePathname } from "next/navigation";
 import { useStore } from "@/store";
 import MessageBar from "./message-bar";
-import { Message } from "@/types/types";
 import socket from "@/lib/socket";
 
 const ChatContainer: React.FC = () => {
   const pathname = usePathname();
   const chatId = pathname?.split("/")[2] ?? null;
 
-  const [messages, setMessages] = useState<Message[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const { chatList, currentUser } = useStore();
-  const currentChat = chatList.find((c) => c.id === chatId);
+  const { chatList, currentUser, messages, setMessages } = useStore();
+  const currentChat = chatList.find((c) => c._id === chatId);
   const isNearBottomRef = useRef(true);
 
   // 1. Load initial messages when chatId changes
@@ -52,35 +50,35 @@ const ChatContainer: React.FC = () => {
             setHasMore(false);
           }
           setLoadingHistory(false);
-          setTimeout(() => scrollToBottom(), 0); // Initial scroll to bottom
+          // setTimeout(() => scrollToBottom(), 0); // Initial scroll to bottom
         }
       );
     });
-  }, [chatId]);
+  }, [chatId, setMessages]);
 
   // 2. Subscribe to new messages
-  useEffect(() => {
-    const handleNew = (message: Message) => {
-      console.log("New message received:", message);
-      
-      setMessages((prev) => [...prev, message]);
-      if (isNearBottomRef.current) {
-        scrollToBottom();
-      }
-    };
+  // useEffect(() => {
+  //   const handleNew = (newMessage: Message) => {
+  //     console.log("New message received:", newMessage);
 
-    socket.on("message:new", handleNew);
-    return () => {
-      socket.off("message:new", handleNew);
-    };
-  }, []);
+  //     setMessages([...messages, newMessage]);
+  //     if (isNearBottomRef.current) {
+  //       scrollToBottom();
+  //     }
+  //   };
 
-  const scrollToBottom = () => {
-    const el = containerRef.current;
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-    }
-  };
+  //   socket.on("message:new", handleNew);
+  //   return () => {
+  //     socket.off("message:new", handleNew);
+  //   };
+  // }, [messages, setMessages]);
+
+  // const scrollToBottom = () => {
+  //   const el = containerRef.current;
+  //   if (el) {
+  //     el.scrollTop = el.scrollHeight;
+  //   }
+  // };
 
   // 3. Handle scroll events
   const handleScroll = () => {
@@ -118,7 +116,7 @@ const ChatContainer: React.FC = () => {
       { chatId, before: oldest, limit: 20 },
       (res: any) => {
         if (res.status === 200 && res.data.length) {
-          setMessages((prev) => [...res.data, ...prev]);
+          setMessages([...res.data, ...messages]);
           if (res.data.length < 20) {
             setHasMore(false);
           }
@@ -137,7 +135,7 @@ const ChatContainer: React.FC = () => {
         }, 0);
       }
     );
-  }, [chatId, loadingHistory, hasMore, messages]);
+  }, [chatId, loadingHistory, hasMore, messages, setMessages]);
 
   // 5. Send message
   const sendMessage = (message: string) => {

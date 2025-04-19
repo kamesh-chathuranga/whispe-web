@@ -1,16 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { ScrollArea } from "../ui/scroll-area";
-import ChatItem from "./chat";
 import { useStore } from "@/store";
 import socket from "@/lib/socket";
-import { type Chat } from "@/types/types";
 import toast from "react-hot-toast";
 import Notification from "../custom/notification";
 import API from "@/lib/axios";
 import { AxiosError } from "axios";
+import Chat from "./chat";
 
 const ChatList = () => {
   const { currentUser, chatList, setChatList } = useStore();
@@ -21,16 +19,7 @@ const ChatList = () => {
       try {
         setIsLoading(true);
         const response = await API.get("/chat");
-        const chats: Chat[] = response.data.map((chat: any) => ({
-          id: chat._id,
-          avatarUrl: chat.avatarUrl,
-          lastMessage: chat.lastMessage,
-          partnerName:
-            chat.participants[0]._id === currentUser?.id
-              ? chat.participants[1].name
-              : chat.participants[0].name,
-        }));
-        setChatList(chats);
+        setChatList(response.data);
       } catch (error) {
         if (error instanceof AxiosError) {
           toast.error(error.response?.data.message);
@@ -47,24 +36,18 @@ const ChatList = () => {
     if (!socket || !currentUser?.id) return;
     // socket.emit("join", currentUser?.id);
 
-    socket.on("friendRequestAccepted", (chat) => {
-      const shouldNotified = chat.userId !== currentUser.id;
-      const newChat: Chat = {
-        id: chat.id,
-        avatarUrl: chat.avatarUrl,
-        lastMessage: chat.lastMessage,
-        partnerName: chat.partnerName,
-      };
-      setChatList([...chatList, newChat]);
+    socket.on("friendRequest:accepted", (chat) => {
+      const shouldNotified = chat.acceptBy !== currentUser.id;
+      setChatList([...chatList, chat]);
 
       if (!shouldNotified) return;
       toast.custom(
         (t) => (
           <Notification
             t={t}
-            url={`/chat/${chat.id}`}
-            senderName={newChat.partnerName}
-            image={newChat.avatarUrl}
+            url={`/chat/${chat._id}`}
+            senderName={chat.partner.name}
+            image={chat.partner.avatarUrl}
             message="Accept your friend request"
           />
         ),
@@ -73,7 +56,7 @@ const ChatList = () => {
     });
 
     return () => {
-      socket.off("friendRequestAccepted");
+      socket.off("friendRequest:accepted");
     };
   }, [chatList, currentUser?.id, setChatList]);
 
@@ -82,12 +65,11 @@ const ChatList = () => {
   ) : (
     <div>
       {chatList.map((chat) => (
-        <ChatItem
-          id={chat.id}
-          key={chat.id}
-          avatarUrl={chat.avatarUrl}
+        <Chat
+          _id={chat._id}
+          key={chat._id}
+          partner={chat.partner}
           lastMessage={chat.lastMessage}
-          partnerName={chat.partnerName}
         />
       ))}
     </div>

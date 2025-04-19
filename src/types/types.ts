@@ -27,16 +27,15 @@ export interface ReceivedFriendRequest {
   senderImageUrl?: string;
 }
 
-export interface Chat {
-  id: string;
-  partnerName: string;
-  avatarUrl: string | undefined;
+export interface SingleChat {
+  _id: string;
+  partner: Person;
   lastMessage?: Message;
 }
 
 export interface Message {
   _id: string;
-  sender: { name: string; avatarUrl?: string; _id: string };
+  sender: Person;
   content: string;
   attachments?: any[];
   createdAt: string;
