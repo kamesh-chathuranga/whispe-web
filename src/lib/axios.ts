@@ -26,7 +26,6 @@ API.interceptors.response.use(
 
       try {
         await API.post("/auth/refresh");
-
         return API(originalRequest);
       } catch {
         if (typeof window !== "undefined") {

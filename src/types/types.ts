@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface User {
   id: string;
   name: string;
@@ -30,5 +31,14 @@ export interface Chat {
   id: string;
   partnerName: string;
   avatarUrl: string | undefined;
-  lastMessage: string;
+  lastMessage?: Message;
+}
+
+export interface Message {
+  _id: string;
+  sender: { name: string; avatarUrl?: string; _id: string };
+  content: string;
+  attachments?: any[];
+  createdAt: string;
+  chat: string;
 }

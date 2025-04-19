@@ -45,7 +45,7 @@ const ChatList = () => {
 
   useEffect(() => {
     if (!socket || !currentUser?.id) return;
-    socket.emit("join", currentUser?.id);
+    // socket.emit("join", currentUser?.id);
 
     socket.on("friendRequestAccepted", (chat) => {
       const shouldNotified = chat.userId !== currentUser.id;

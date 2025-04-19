@@ -3,22 +3,15 @@
 import React, { useEffect } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Chat, Message, User } from "@/types/types";
 import EmojiPicker from "emoji-picker-react";
 import { MouseDownEvent } from "emoji-picker-react/dist/config/config";
 import { Paperclip, SendHorizonal, Smile } from "lucide-react";
 
 interface MessageBarProps {
-  currentUser: User | null;
-  currentChat: Chat | null;
-  setMessage: (message: Message) => void;
+  setMessage: (message: string) => void;
 }
 
-const MessageBar = ({
-  currentUser,
-  currentChat,
-  setMessage,
-}: MessageBarProps) => {
+const MessageBar = ({ setMessage }: MessageBarProps) => {
   const [typedMessage, setTypedMessage] = React.useState("");
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
   const emojiPickerRef = React.useRef<HTMLDivElement>(null);
@@ -49,29 +42,16 @@ const MessageBar = ({
   };
 
   const sendMessage = async () => {
-    // try {
-    //   const { data } = await axios.post(
-    //     "http://localhost:7000/api/message/new",
-    //     {
-    //       from: currentUser?.id,
-    //       to: curentChat?.id,
-    //       message: typedMessage,
-    //     }
-    //   );
-    //   socket.current?.emit("send-message", {
-    //     from: currentUser?.id,
-    //     to: curentChat?.id,
-    //     message: data,
-    //   });
-    //   setMessage(data);
-    //   setTypedMessage("");
-    // } catch (error) {
-    //   console.log(error);
-    // }
+    try {
+      setMessage(typedMessage);
+      setTypedMessage("");
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
-    <div className="flex items-center p-3 h-[10%] relative">
+    <div className="flex items-center p-3 h-[10%] relative border-t border-gray-200">
       <Button variant="ghost" onClick={toggleEmojiPicker} id="emoji-picker">
         <Smile />
       </Button>

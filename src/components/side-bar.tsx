@@ -19,7 +19,7 @@ import { DEFAULT_SIGNOUT_REDIRECT } from "@/routes";
 import { AxiosError } from "axios";
 import toast from "react-hot-toast";
 import socket from "@/lib/socket";
-import { ReceivedFriendRequest } from "@/types/types";
+import { Message, ReceivedFriendRequest } from "@/types/types";
 import Notification from "./custom/notification";
 
 const sideBarData = [
@@ -69,8 +69,14 @@ const NavigationButton = ({ icon, path }: NavigationButtonProps) => {
 };
 
 const SideBar = () => {
-  const { currentUser, setCurrentUser, setFriendRequests, friendRequests } =
-    useStore();
+  const {
+    currentUser,
+    setCurrentUser,
+    setFriendRequests,
+    friendRequests,
+    chatList,
+    setChatList,
+  } = useStore();
   // const [unseenNotificationCount, setUnseenRequestCount] = useState(0);
   const router = useRouter();
   const pathName = usePathname();
@@ -96,7 +102,7 @@ const SideBar = () => {
 
   useEffect(() => {
     if (!socket || !currentUser?.id) return;
-    socket.emit("join", currentUser?.id);
+    // socket.emit("join", currentUser?.id);
 
     socket.on("friendRequestReceived", (request) => {
       const shouldNotified = pathName !== "/dashboard/friends";
@@ -122,10 +128,46 @@ const SideBar = () => {
       );
     });
 
+    socket.on("message:new", (message: Message) => {
+      const shouldNotified =
+        pathName !== `/chat/${message.chat}` &&
+        currentUser.id !== message.sender._id;
+
+      if (!shouldNotified) return;
+      toast.custom(
+        (t) => (
+          <Notification
+            t={t}
+            url={`/chat/${message.chat}`}
+            senderName={message.sender.name}
+            image={message.sender.avatarUrl}
+            message={message.content}
+          />
+        ),
+        { position: "top-center" }
+      );
+
+      const chat = chatList.map((chat) =>
+        chat.id === message.chat
+          ? { ...chat, lastMessage: message.content }
+          : chat
+      );
+
+      setChatList(chat);
+    });
+
     return () => {
       socket.off("friendRequestReceived");
+      socket.off("message:new");
     };
-  }, [currentUser?.id, friendRequests, pathName, setFriendRequests]);
+  }, [
+    chatList,
+    currentUser?.id,
+    friendRequests,
+    pathName,
+    setChatList,
+    setFriendRequests,
+  ]);
 
   return (
     <div className="flex flex-col h-full items-center justify-between w-12 bg-slate-300/80 px-1 py-1.5">

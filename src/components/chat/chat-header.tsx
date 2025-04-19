@@ -11,7 +11,7 @@ interface ChatHeaderProps {
 
 const ChatHeader = ({ chat }: ChatHeaderProps) => {
   return (
-    <div className="flex items-center justify-between p-3 h-[10%]">
+    <div className="flex items-center justify-between p-3 h-[10%] border-b border-gray-200">
       <div className="flex items-center gap-x-4">
         <Avatar>
           <AvatarImage src={chat.avatarUrl} />

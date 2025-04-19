@@ -36,7 +36,7 @@ const Chat = ({ id, avatarUrl, lastMessage, partnerName }: Chat) => {
           <div className="ml-3 flex-1">
             <p className="text-sm font-medium text-gray-900">{partnerName}</p>
             <p className="mt-1 text-sm text-gray-500">
-              {lastMessage ? lastMessage : "You are now connected"}
+              {lastMessage ? lastMessage.content : "You are now connected"}
             </p>
           </div>
         </div>
