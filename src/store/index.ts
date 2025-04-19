@@ -11,6 +11,8 @@ interface Store {
   friendRequests: ReceivedFriendRequest[];
   chatList: SingleChat[];
   messages: Message[];
+  localStream: MediaStream | null;
+  setLocalStream: (stream: MediaStream | null) => void;
   setMessages: (messages: Message[]) => void;
   setChatList: (chatList: SingleChat[]) => void;
   setFriendRequests: (friendRequests: ReceivedFriendRequest[]) => void;
@@ -22,6 +24,8 @@ export const useStore = create<Store>()((set) => ({
   friendRequests: [],
   chatList: [],
   messages: [],
+  localStream: null,
+  setLocalStream: (stream) => set({ localStream: stream }),
   setMessages: (messages) => set({ messages }),
   setChatList: (chatList) => set({ chatList }),
   setCurrentUser: (user) => set({ currentUser: user }),

@@ -41,3 +41,10 @@ export interface Message {
   createdAt: string;
   chat: string;
 }
+
+export interface IncomingCall {
+  callerId: string;
+  callerName: string;
+  callerAvatarUrl: string;
+  isRinging: boolean;
+}

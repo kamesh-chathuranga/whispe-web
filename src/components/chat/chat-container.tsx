@@ -140,6 +140,7 @@ const ChatContainer: React.FC = () => {
   // 5. Send message
   const sendMessage = (message: string) => {
     if (!chatId) return;
+
     socket.emit(
       "message:send",
       { chatId, content: message, attachments: [] },
@@ -159,7 +160,7 @@ const ChatContainer: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen w-full">
-      <ChatHeader chat={currentChat} />
+      <ChatHeader chat={currentChat} currentUser={currentUser} />
       <MessageContainer
         messages={messages}
         currentUserId={currentUser.id}
