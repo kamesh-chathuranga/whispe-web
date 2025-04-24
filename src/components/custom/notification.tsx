@@ -47,7 +47,7 @@ const Notification = ({
                 <AvatarFallback>{senderName.charAt(0)}</AvatarFallback>
               </Avatar>
             </div>
-            <div className="ml-3 flex-1">
+            <div className="ml-3 flex-1 overflow-hidden">
               <p className="text-sm font-medium text-gray-900">{senderName}</p>
               <p className="mt-1 text-sm text-gray-500 truncate">{message}</p>
             </div>

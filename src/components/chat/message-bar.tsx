@@ -9,9 +9,10 @@ import { Paperclip, SendHorizonal, Smile } from "lucide-react";
 
 interface MessageBarProps {
   setMessage: (message: string) => void;
+  handleTyping: () => void;
 }
 
-const MessageBar = ({ setMessage }: MessageBarProps) => {
+const MessageBar = ({ setMessage, handleTyping }: MessageBarProps) => {
   const [typedMessage, setTypedMessage] = React.useState("");
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
   const emojiPickerRef = React.useRef<HTMLDivElement>(null);
@@ -41,6 +42,11 @@ const MessageBar = ({ setMessage }: MessageBarProps) => {
     setTypedMessage((prev) => prev + emojiData.emoji);
   };
 
+  const handleKeyDown = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTypedMessage(e.target.value);
+    handleTyping();
+  };
+
   const sendMessage = async () => {
     try {
       setMessage(typedMessage);
@@ -67,7 +73,7 @@ const MessageBar = ({ setMessage }: MessageBarProps) => {
       <Input
         className="focus-visible:ring-0 focus-visible:ring-offset-0"
         placeholder="Type a message"
-        onChange={(e) => setTypedMessage(e.target.value)}
+        onChange={(e) => handleKeyDown(e)}
         value={typedMessage}
         autoFocus
       />
