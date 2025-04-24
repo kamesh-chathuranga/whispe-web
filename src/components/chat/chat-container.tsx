@@ -21,16 +21,13 @@ const ChatContainer: React.FC = () => {
   const currentChat = chatList.find((c) => c._id === chatId);
   const isNearBottomRef = useRef(true);
 
-  // 1. Load initial messages when chatId changes
   useEffect(() => {
     if (!chatId) return;
 
-    // Reset state
     setMessages([]);
     setHasMore(true);
     setLoadingHistory(true);
 
-    // Join and fetch first page
     socket.emit("joinChat", chatId, (res: any) => {
       if (res.status !== 200) {
         setLoadingHistory(false);
@@ -56,23 +53,6 @@ const ChatContainer: React.FC = () => {
     });
   }, [chatId, setMessages]);
 
-  // 2. Subscribe to new messages
-  // useEffect(() => {
-  //   const handleNew = (newMessage: Message) => {
-  //     console.log("New message received:", newMessage);
-
-  //     setMessages([...messages, newMessage]);
-  //     if (isNearBottomRef.current) {
-  //       scrollToBottom();
-  //     }
-  //   };
-
-  //   socket.on("message:new", handleNew);
-  //   return () => {
-  //     socket.off("message:new", handleNew);
-  //   };
-  // }, [messages, setMessages]);
-
   // const scrollToBottom = () => {
   //   const el = containerRef.current;
   //   if (el) {
@@ -80,31 +60,26 @@ const ChatContainer: React.FC = () => {
   //   }
   // };
 
-  // 3. Handle scroll events
   const handleScroll = () => {
     const el = containerRef.current;
     if (!el) return;
 
-    // Check if near the top to load history
     if (el.scrollTop < 100) {
       fetchHistory();
     }
 
-    // Update near-bottom status
     const threshold = 100;
     const isNearBottom =
       el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
     isNearBottomRef.current = isNearBottom;
   };
 
-  // 4. Fetch older messages
   const fetchHistory = useCallback(() => {
     if (!chatId || loadingHistory || !hasMore) return;
 
     const el = containerRef.current;
     if (!el) return;
 
-    // Save current scroll position
     const prevScrollHeight = el.scrollHeight;
     const prevScrollTop = el.scrollTop;
 
@@ -125,7 +100,6 @@ const ChatContainer: React.FC = () => {
         }
         setLoadingHistory(false);
 
-        // Adjust scroll position after messages are added
         setTimeout(() => {
           if (containerRef.current) {
             const newScrollHeight = containerRef.current.scrollHeight;
@@ -137,7 +111,6 @@ const ChatContainer: React.FC = () => {
     );
   }, [chatId, loadingHistory, hasMore, messages, setMessages]);
 
-  // 5. Send message
   const sendMessage = (message: string) => {
     if (!chatId) return;
 
@@ -160,7 +133,7 @@ const ChatContainer: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen w-full">
-      <ChatHeader chat={currentChat} currentUser={currentUser} />
+      <ChatHeader chat={currentChat} />
       <MessageContainer
         messages={messages}
         currentUserId={currentUser.id}

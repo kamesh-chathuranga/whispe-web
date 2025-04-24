@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+import Peer from "simple-peer";
+
 export interface User {
   id: string;
   name: string;
@@ -43,8 +46,13 @@ export interface Message {
 }
 
 export interface IncomingCall {
-  callerId: string;
-  callerName: string;
-  callerAvatarUrl: string;
+  caller: Person;
+  receiver: Person;
   isRinging: boolean;
+}
+
+export interface PeerData {
+  peerConnection: Peer.Instance;
+  stream: MediaStream | null;
+  partner: Person;
 }

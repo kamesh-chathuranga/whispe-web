@@ -1,63 +1,39 @@
-export const calculateTime = (time: Date) => {
-  // Assuming the input date string is in UTC format
-  const inputDate = new Date(time);
-  // Get current date
-  const currentDate = new Date();
+export function calculateTime(date: Date) {
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
 
-  // Check if it's today, tomorrow, or more than one day ago
-  if (
-    inputDate.getUTCDate() === currentDate.getUTCDate() &&
-    inputDate.getUTCMonth() === currentDate.getUTCMonth() &&
-    inputDate.getUTCFullYear() === currentDate.getUTCFullYear()
-  ) {
-    // Today: Convert to AM/PM format
-    const ampmTime = inputDate.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "numeric",
-    });
-    return ampmTime;
-  } else if (
-    inputDate.getUTCDate() === currentDate.getUTCDate() - 1 &&
-    inputDate.getUTCMonth() === currentDate.getUTCMonth() &&
-    inputDate.getUTCFullYear() === currentDate.getUTCFullYear()
-  ) {
-    // Tomorrow: Show "Yesterday"
+  // Determine A.M. / P.M.
+  const suffix = hours >= 12 ? "PM" : "AM";
 
-    return "Yesterday";
-  } else if (
-    Math.floor(
-      (currentDate.valueOf() - inputDate.valueOf()) / (1000 * 60 * 60 * 24)
-    ) > 1 &&
-    Math.floor(
-      (currentDate.valueOf() - inputDate.valueOf()) / (1000 * 60 * 60 * 24)
-    ) <= 7
-  ) {
-    const timeDifference = Math.floor(
-      (currentDate.valueOf() - inputDate.valueOf()) / (1000 * 60 * 60 * 24)
-    );
+  // Convert 24h → 12h, making “0” → “12”
+  hours = hours % 12;
+  if (hours === 0) hours = 12;
 
-    const targetDate = new Date();
-    targetDate.setDate(currentDate.getDate() - timeDifference);
+  // Pad minutes to two digits
+  const minutesPadded = minutes < 10 ? `0${minutes}` : `${minutes}`;
 
-    const daysOfWeek = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    const targetDay = daysOfWeek[targetDate.getDay()];
+  // Use “.” between hours and minutes to match your example
+  return `${hours}.${minutesPadded} ${suffix}`;
+}
 
-    return targetDay;
-  } else {
-    // More than 7 days ago: Show date in DD/MM/YYYY format
-    const formattedDate = inputDate.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-    return formattedDate;
-  }
-};
+export function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+export function formatDateSeparator(date: Date) {
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (isSameDay(date, today)) return "Today";
+  if (isSameDay(date, yesterday)) return "Yesterday";
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}

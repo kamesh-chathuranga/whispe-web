@@ -11,14 +11,17 @@ import {
   PhoneOff,
   Shrink,
   Fullscreen,
+  LoaderCircle,
 } from "lucide-react";
 import { Button } from "../ui/button";
+import useVideoCall from "@/hooks/use-video-call";
 
 const VideoCallPlayer = () => {
-  const { localStream } = useStore();
+  const { localStream, peer, incomingCall } = useStore();
   const [isMicOn, setIsMicOn] = useState(true);
   const [isCameraOn, setIsCameraOn] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const { handleHangUp } = useVideoCall();
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -58,16 +61,38 @@ const VideoCallPlayer = () => {
     setIsFullScreen((prev) => !prev);
   }, [isFullScreen]);
 
-  if (!localStream) {
+  if (!localStream && !peer) {
     return <div className="w-full h-full">No stream available</div>;
   }
+
+  const isAccepted = localStream && peer && incomingCall ? true : false;
 
   return (
     <div
       ref={containerRef}
       className="relative w-full h-full flex items-center justify-center"
     >
-      <VideoPreview stream={localStream} isLocalStream isAccepted={false} />
+      <VideoPreview
+        stream={localStream}
+        isLocalStream={true}
+        isAccepted={isAccepted}
+      />
+      {peer && peer.stream ? (
+        <VideoPreview
+          stream={peer.stream}
+          isLocalStream={false}
+          isAccepted={isAccepted}
+        />
+      ) : (
+        <div className="w-full h-full bg-black">
+          <div className="flex flex-col gap-8 w-full h-full items-center justify-center">
+            <LoaderCircle size={100} className="animate-spin text-blue-600" />
+            <p className="text-lg text-gray-400 text-center">
+              Please wait for the other person to join the call.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-4 p-2 px-4 rounded-full bg-white/15">
         <Button
@@ -95,7 +120,14 @@ const VideoCallPlayer = () => {
         </Button>
 
         <Button
-          onClick={() => {}}
+          onClick={() => {
+            console.log(incomingCall, "incomingCall");
+
+            handleHangUp({
+              incomingCall: incomingCall ? incomingCall : undefined,
+              isEmitiHangUp: true,
+            });
+          }}
           className="p-2 rounded-full hover:bg-red-600"
           size="icon"
         >

@@ -22,6 +22,8 @@ import socket from "@/lib/socket";
 import { IncomingCall, Message, ReceivedFriendRequest } from "@/types/types";
 import Notification from "./custom/notification";
 import CallNotification from "./custom/call-notification";
+import { SignalData } from "simple-peer";
+import useVideoCall from "@/hooks/use-video-call";
 
 const sideBarData = [
   {
@@ -79,13 +81,16 @@ const SideBar = () => {
     setChatList,
     messages,
     setMessages,
+    incomingCall: incomingCallDetails,
+    setIncomingCall,
+    localStream,
+    peer,
+    setPeer,
   } = useStore();
   // const [unseenNotificationCount, setUnseenRequestCount] = useState(0);
   const router = useRouter();
   const pathName = usePathname();
-  const [incomingCall, setIncomingCall] = React.useState<IncomingCall | null>(
-    null
-  );
+  const { createPeerConnection, handleHangUp } = useVideoCall();
 
   useEffect(() => {
     if (!socket || !currentUser?.id) return;
@@ -140,14 +145,9 @@ const SideBar = () => {
       );
     });
 
-    socket.on("call:incoming", (request) => {
-      setIncomingCall({ ...request, isRinging: true });
-    });
-
     return () => {
       socket.off("friendRequest:received");
       socket.off("message:new");
-      socket.off("call:incoming");
     };
   }, [
     chatList,
@@ -158,6 +158,65 @@ const SideBar = () => {
     setChatList,
     setFriendRequests,
     setMessages,
+  ]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("call:incoming", (request) => {
+      setIncomingCall({ ...request, isRinging: true });
+    });
+
+    socket.on(
+      "webrtcSignal",
+      (response: {
+        sdp: SignalData;
+        incomingCall: IncomingCall;
+        isCaller: boolean;
+      }) => {
+        if (!localStream) {
+          return;
+        }
+
+        if (peer) {
+          peer.peerConnection.signal(response.sdp);
+          return;
+        }
+
+        const newPeer = createPeerConnection(localStream, true);
+
+        setPeer({
+          peerConnection: newPeer,
+          stream: null,
+          partner: { ...response.incomingCall.receiver },
+        });
+
+        newPeer.on("signal", (data: SignalData) => {
+          if (socket) {
+            socket.emit("webrtcSignal", {
+              sdp: data,
+              incomingCall: response.incomingCall,
+              isCaller: true,
+            });
+          }
+        });
+      }
+    );
+
+    socket.on("call:hangup", handleHangUp);
+
+    return () => {
+      socket.off("call:incoming");
+      socket.off("webrtcSignal");
+      socket.off("call:hangup", handleHangUp);
+    };
+  }, [
+    createPeerConnection,
+    handleHangUp,
+    localStream,
+    peer,
+    setIncomingCall,
+    setPeer,
   ]);
 
   const handleLogout = async () => {
@@ -179,13 +238,9 @@ const SideBar = () => {
     }
   };
 
-  const handleOnClose = () => {
-    setIncomingCall((prev) => (prev ? { ...prev, isRinging: false } : null));
-  };
-
   return (
     <>
-      <CallNotification incomingCall={incomingCall} onClose={handleOnClose} />
+      <CallNotification incomingCall={incomingCallDetails} />
       <div className="flex flex-col h-full items-center justify-between w-12 bg-slate-300/80 px-1 py-1.5">
         <div>
           <Button variant="ghost" size="icon" className="mb-3.5">

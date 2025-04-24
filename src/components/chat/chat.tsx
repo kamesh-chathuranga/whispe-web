@@ -1,15 +1,23 @@
 'use client";';
 
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { type SingleChat } from "@/types/types";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
 import Image from "next/image";
+import { useStore } from "@/store";
 
 const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
   const pathName = usePathname();
+  const { setCurrentChat } = useStore();
+
+  useEffect(() => {
+    if (pathName.includes(_id)) {
+      setCurrentChat({ _id, partner, lastMessage });
+    }
+  }, [_id, lastMessage, partner, pathName, setCurrentChat]);
 
   return (
     <Link

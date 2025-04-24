@@ -51,7 +51,7 @@ const MessageBar = ({ setMessage }: MessageBarProps) => {
   };
 
   return (
-    <div className="flex items-center p-3 h-[10%] relative border-t border-gray-200">
+    <div className="flex items-center p-3 h-[10%] relative border-t border-gray-200 gap-2">
       <Button variant="ghost" onClick={toggleEmojiPicker} id="emoji-picker">
         <Smile />
       </Button>
@@ -65,9 +65,11 @@ const MessageBar = ({ setMessage }: MessageBarProps) => {
         <Paperclip />
       </Button>
       <Input
+        className="focus-visible:ring-0 focus-visible:ring-offset-0"
         placeholder="Type a message"
         onChange={(e) => setTypedMessage(e.target.value)}
         value={typedMessage}
+        autoFocus
       />
       <Button variant="ghost" onClick={sendMessage}>
         <SendHorizonal />
