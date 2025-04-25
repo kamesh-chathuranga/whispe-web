@@ -56,3 +56,9 @@ export interface PeerData {
   stream: MediaStream | null;
   partner: Person;
 }
+
+export interface FriendStatus {
+  userId: string;
+  isOnline: boolean;
+  lastSeen?: string;
+}

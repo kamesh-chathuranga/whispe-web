@@ -37,3 +37,29 @@ export function formatDateSeparator(date: Date) {
     year: "numeric",
   });
 }
+
+export function formatLastSeen(date: string): string {
+  if (!date) return "Never online";
+
+  const lastSeenDate = new Date(date);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  // Format the time part (reusing existing function)
+  const timeString = calculateTime(lastSeenDate);
+
+  // Check if the date is today or yesterday
+  if (isSameDay(lastSeenDate, today)) {
+    return `last seen today at ${timeString}`;
+  } else if (isSameDay(lastSeenDate, yesterday)) {
+    return `last seen yesterday at ${timeString}`;
+  } else {
+    // For older dates, use the date without time
+    return `last seen ${lastSeenDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })}`;
+  }
+}

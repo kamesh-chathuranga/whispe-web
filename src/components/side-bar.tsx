@@ -19,7 +19,12 @@ import { DEFAULT_SIGNOUT_REDIRECT } from "@/routes";
 import { AxiosError } from "axios";
 import toast from "react-hot-toast";
 import socket from "@/lib/socket";
-import { IncomingCall, Message, ReceivedFriendRequest } from "@/types/types";
+import {
+  FriendStatus,
+  IncomingCall,
+  Message,
+  ReceivedFriendRequest,
+} from "@/types/types";
 import Notification from "./custom/notification";
 import CallNotification from "./custom/call-notification";
 import { SignalData } from "simple-peer";
@@ -86,11 +91,35 @@ const SideBar = () => {
     localStream,
     peer,
     setPeer,
+    friendStatuses,
+    setFriendStatuses,
   } = useStore();
   // const [unseenNotificationCount, setUnseenRequestCount] = useState(0);
   const router = useRouter();
   const pathName = usePathname();
   const { createPeerConnection, handleHangUp } = useVideoCall();
+
+  useEffect(() => {
+    socket.on("friends:status", (friendStatuses: FriendStatus[]) => {
+      setFriendStatuses(friendStatuses);
+    });
+
+    socket.on("friend:status", (status: FriendStatus) => {
+      const updatedStatuses = friendStatuses.map((friend: FriendStatus) => {
+        if (friend.userId === status.userId) {
+          return status;
+        }
+        return friend;
+      });
+
+      setFriendStatuses(updatedStatuses);
+    });
+
+    return () => {
+      socket.off("friends:status");
+      socket.off("friend:status");
+    };
+  }, [friendStatuses, setFriendStatuses]);
 
   useEffect(() => {
     if (!socket || !currentUser?.id) return;

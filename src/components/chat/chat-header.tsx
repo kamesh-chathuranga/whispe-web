@@ -1,16 +1,28 @@
+"use client";
+
 import React from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
-import { SingleChat } from "@/types/types";
+import { FriendStatus, SingleChat } from "@/types/types";
 import { Phone, Search, UserIcon, Video } from "lucide-react";
 import useVideoCall from "@/hooks/use-video-call";
+import { useStore } from "@/store";
+import { cn } from "@/lib/utils";
+import { formatLastSeen } from "@/lib/calculateTime";
 
 interface ChatHeaderProps {
   chat: SingleChat;
 }
 
 const ChatHeader = ({ chat }: ChatHeaderProps) => {
+  const partnerId = chat.partner._id;
+  const friendStatuses = useStore((state) =>
+    state.friendStatuses.find(
+      (status: FriendStatus) => status.userId === partnerId
+    )
+  );
+
   const { startVideoCall } = useVideoCall();
 
   return (
@@ -24,7 +36,18 @@ const ChatHeader = ({ chat }: ChatHeaderProps) => {
         </Avatar>
         <div className="flex flex-col">
           <span className="font-medium ">{chat.partner.name}</span>
-          <span className="text-xs text-emerald-500">online</span>
+          <span
+            className={cn(
+              "text-xs",
+              friendStatuses?.isOnline ? "text-emerald-500" : "text-gray-500"
+            )}
+          >
+            {friendStatuses?.isOnline
+              ? "Online"
+              : friendStatuses?.lastSeen
+              ? formatLastSeen(friendStatuses.lastSeen)
+              : "Offline"}
+          </span>
         </div>
       </div>
 

@@ -16,6 +16,12 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
   const measureRef = useRef<HTMLSpanElement>(null);
   const [displayMessage, setDisplayMessage] = useState("");
 
+  useEffect(() => {
+    if (pathName.includes(_id)) {
+      setCurrentChat({ _id, partner, lastMessage });
+    }
+  }, [_id, lastMessage, partner, pathName, setCurrentChat]);
+
   const truncateMessage = useCallback(() => {
     if (!containerRef.current || !measureRef.current) return;
 
@@ -73,12 +79,6 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
       }
     };
   }, [truncateMessage]);
-
-  useEffect(() => {
-    if (pathName.includes(_id)) {
-      setCurrentChat({ _id, partner, lastMessage });
-    }
-  }, [_id, lastMessage, partner, pathName, setCurrentChat]);
 
   return (
     <Link

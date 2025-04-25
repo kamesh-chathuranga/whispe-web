@@ -21,7 +21,7 @@ const useVideoCall = () => {
   const handleHangUp = useCallback(
     (data: { incomingCall?: IncomingCall; isEmitiHangUp?: boolean }) => {
       console.log("Hang up call", data?.incomingCall);
-      
+
       if (socket && currentUser && data?.incomingCall && data.isEmitiHangUp) {
         socket.emit("call:hangup", {
           incomingCall: data.incomingCall,
@@ -164,7 +164,7 @@ const useVideoCall = () => {
       }
     );
 
-    router.push(`/dashboard/calls`);
+    router.push("/dashboard/calls");
   }, [
     chat,
     currentUser?.avatarUrl,
@@ -182,6 +182,7 @@ const useVideoCall = () => {
         ...incomingCall,
         isRinging: false,
       });
+      router.push("/dashboard/calls");
 
       const stream = await getMediaStream();
 
@@ -211,6 +212,7 @@ const useVideoCall = () => {
     [
       createPeerConnection,
       getMediaStream,
+      router,
       setIncomingCall,
       setIsCallEnded,
       setPeer,

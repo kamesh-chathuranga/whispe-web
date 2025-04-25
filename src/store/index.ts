@@ -5,6 +5,7 @@ import {
   Message,
   IncomingCall,
   PeerData,
+  FriendStatus,
 } from "@/types/types";
 import { create } from "zustand";
 
@@ -18,6 +19,7 @@ interface Store {
   incomingCall: IncomingCall | null;
   peer: PeerData | null;
   isCallEnded: boolean;
+  friendStatuses: FriendStatus[];
 
   setIncomingCall: (incomingCall: IncomingCall | null) => void;
   setCurrentChat: (chat: SingleChat | null) => void;
@@ -27,6 +29,7 @@ interface Store {
   setFriendRequests: (friendRequests: ReceivedFriendRequest[]) => void;
   setCurrentUser: (user: User | null) => void;
   setIsCallEnded: (isCallEnded: boolean) => void;
+  setFriendStatuses: (friendStatuses: FriendStatus[]) => void;
 
   setPeer: (
     peer: PeerData | null | ((prevPeer: PeerData | null) => PeerData | null)
@@ -43,6 +46,7 @@ export const useStore = create<Store>()((set) => ({
   incomingCall: null,
   peer: null,
   isCallEnded: false,
+  friendStatuses: [],
 
   setIncomingCall: (incomingCall) => set({ incomingCall }),
   setCurrentChat: (chat) => set({ currentChat: chat }),
@@ -52,6 +56,7 @@ export const useStore = create<Store>()((set) => ({
   setCurrentUser: (user) => set({ currentUser: user }),
   setFriendRequests: (friendRequests) => set({ friendRequests }),
   setIsCallEnded: (isCallEnded) => set({ isCallEnded }),
+  setFriendStatuses: (friendStatuses) => set({ friendStatuses }),
 
   setPeer: (peer) =>
     set((state) => ({
