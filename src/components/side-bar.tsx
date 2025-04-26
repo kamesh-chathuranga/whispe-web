@@ -150,6 +150,8 @@ const SideBar = () => {
     });
 
     socket.on("message:new", (message: Message) => {
+      console.log('message ', message);
+      
       const chat = chatList.map((chat) =>
         chat._id === message.chat ? { ...chat, lastMessage: message } : chat
       );

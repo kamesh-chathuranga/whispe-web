@@ -8,12 +8,16 @@ import { usePathname } from "next/navigation";
 import { useStore } from "@/store";
 import MessageBar from "./message-bar";
 import socket from "@/lib/socket";
+import API from "@/lib/axios";
+import { AxiosError } from "axios";
+import toast from "react-hot-toast";
 
 const ChatContainer: React.FC = () => {
   const pathname = usePathname();
   const chatId = pathname?.split("/")[2] ?? null;
 
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,37 +44,31 @@ const ChatContainer: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (!chatId) return;
-
-    setMessages([]);
-    setHasMore(true);
-    setLoadingHistory(true);
-
-    socket.emit("joinChat", chatId, (res: any) => {
-      if (res.status !== 200) {
-        setLoadingHistory(false);
-        return;
-      }
-
-      socket.emit(
-        "message:history",
-        { chatId, before: null, limit: 20 },
-        (historyRes: any) => {
-          if (historyRes.status === 200 && historyRes.data.length) {
-            setMessages(historyRes.data);
-            if (historyRes.data.length < 20) {
-              setHasMore(false);
-            }
-          } else {
-            setHasMore(false);
-          }
-          setLoadingHistory(false);
+    (async () => {
+      try {
+        setIsLoading(true);
+        const response = await API.post("/messages", {
+          chatId,
+          before: undefined,
+          limit: 20,
+        });
+        setMessages(response.data);
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          toast.error(error.response?.data.message, { position: "top-center" });
+        } else {
+          toast.error(
+            "An error occurred while fetching messages. Please try again.",
+            { position: "top-center" }
+          );
         }
-      );
-    });
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, [chatId, setMessages]);
 
-  const handleTyping = useCallback(() => {
+  const handleTypingStatus = useCallback(() => {
     socket.emit("typing", chatId);
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -161,11 +159,14 @@ const ChatContainer: React.FC = () => {
         isTyping={isTyping}
         messages={messages}
         currentUserId={currentUser.id}
-        loadingHistory={loadingHistory}
+        loadingHistory={loadingHistory || isLoading}
         ref={containerRef}
         onScroll={handleScroll}
       />
-      <MessageBar setMessage={sendMessage} handleTyping={handleTyping} />
+      <MessageBar
+        setMessage={sendMessage}
+        onTypingStatusChange={handleTypingStatus}
+      />
     </div>
   );
 };
