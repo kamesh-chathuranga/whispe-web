@@ -2,10 +2,10 @@
 
 import React, { useEffect } from "react";
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import EmojiPicker from "emoji-picker-react";
 import { MouseDownEvent } from "emoji-picker-react/dist/config/config";
 import { Paperclip, SendHorizonal, Smile } from "lucide-react";
+import { Textarea } from "../ui/textarea";
 
 interface MessageBarProps {
   setMessage: (message: string) => void;
@@ -42,9 +42,16 @@ const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
     setTypedMessage((prev) => prev + emojiData.emoji);
   };
 
-  const handleKeyDown = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleKeyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTypedMessage(e.target.value);
     onTypingStatusChange();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey && typedMessage.trim()) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
 
   const sendMessage = async () => {
@@ -70,12 +77,14 @@ const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
       <Button variant="ghost">
         <Paperclip />
       </Button>
-      <Input
-        className="focus-visible:ring-0 focus-visible:ring-offset-0"
+      <Textarea
+        className="focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[40px] max-h-[120px] py-2"
         placeholder="Type a message"
-        onChange={(e) => handleKeyDown(e)}
+        onChange={(e) => handleKeyChange(e)}
+        onKeyDown={(e) => handleKeyDown(e)}
         value={typedMessage}
         autoFocus
+        rows={1}
       />
       <Button variant="ghost" onClick={sendMessage}>
         <SendHorizonal />

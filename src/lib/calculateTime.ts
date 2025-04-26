@@ -18,19 +18,32 @@ export function calculateTime(date: Date) {
 
 export function isSameDay(a: Date, b: Date) {
   return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
+    a.getUTCFullYear() === b.getUTCFullYear() &&
+    a.getUTCMonth() === b.getUTCMonth() &&
+    a.getUTCDate() === b.getUTCDate()
   );
 }
 
 export function formatDateSeparator(date: Date) {
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
+  // Get current date at midnight in local timezone
+  const now = new Date();
 
-  if (isSameDay(date, today)) return "Today";
-  if (isSameDay(date, yesterday)) return "Yesterday";
+  // Get today and yesterday in UTC to match message timestamps
+  const today = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  );
+  const yesterday = new Date(today);
+  yesterday.setUTCDate(today.getUTCDate() - 1);
+
+  // Convert the message date to UTC midnight
+  const messageDay = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  );
+
+  // Compare UTC timestamps
+  if (messageDay.getTime() === today.getTime()) return "Today";
+  if (messageDay.getTime() === yesterday.getTime()) return "Yesterday";
+
   return date.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",

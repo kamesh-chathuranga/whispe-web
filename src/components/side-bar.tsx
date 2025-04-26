@@ -127,7 +127,7 @@ const SideBar = () => {
 
     chatList.forEach((chat) => {
       socket.emit("join:chat", chat._id, (res: any) => {
-        if (res.status !== 201) console.log(res.error);
+        if (res.status !== 200) console.log(res.error);
       });
     });
 
@@ -156,8 +156,6 @@ const SideBar = () => {
     });
 
     socket.on("message:new", (message: Message) => {
-      console.log("message ", message);
-
       const chat = chatList.map((chat) =>
         chat._id === message.chat ? { ...chat, lastMessage: message } : chat
       );
