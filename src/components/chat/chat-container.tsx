@@ -137,7 +137,7 @@ const ChatContainer: React.FC = () => {
         "message:send",
         { chatId, content: message, attachments: [] },
         (res: any) => {
-          if (res.status !== 201) console.error(res.error);
+          if (res.status !== 201) console.log(res.error);
         }
       );
     },

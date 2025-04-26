@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useEffect } from "react";
@@ -123,7 +124,12 @@ const SideBar = () => {
 
   useEffect(() => {
     if (!socket || !currentUser?.id) return;
-    // socket.emit("join", currentUser?.id);
+
+    chatList.forEach((chat) => {
+      socket.emit("join:chat", chat._id, (res: any) => {
+        if (res.status !== 201) console.log(res.error);
+      });
+    });
 
     socket.on("friendRequest:received", (request) => {
       const shouldNotified = pathName !== "/dashboard/friends";
@@ -150,8 +156,8 @@ const SideBar = () => {
     });
 
     socket.on("message:new", (message: Message) => {
-      console.log('message ', message);
-      
+      console.log("message ", message);
+
       const chat = chatList.map((chat) =>
         chat._id === message.chat ? { ...chat, lastMessage: message } : chat
       );
