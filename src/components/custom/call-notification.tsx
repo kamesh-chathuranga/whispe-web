@@ -11,19 +11,25 @@ import { Button } from "../ui/button";
 import { PhoneIncoming, PhoneOff, User } from "lucide-react";
 import { IncomingCall } from "@/types/types";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import useVideoCall from "@/hooks/use-video-call";
+import useVideoCall from "@/hooks/use-media-call";
 
 interface CallNotificationProps {
   incomingCall: IncomingCall | null;
+  currentUserId?: string;
 }
 
-const CallNotification = ({ incomingCall }: CallNotificationProps) => {
-  const { joinVideoCall, handleHangUp } = useVideoCall();
+const CallNotification = ({
+  incomingCall,
+  currentUserId,
+}: CallNotificationProps) => {
+  const { joinCall, handleHangUp } = useVideoCall();
 
   if (!incomingCall) return null;
 
   return (
-    <AlertDialog open={incomingCall.isRinging}>
+    <AlertDialog
+      open={incomingCall.isRinging && incomingCall.caller._id !== currentUserId}
+    >
       <AlertDialogTitle />
       <AlertDialogDescription />
       <AlertDialogContent className="sm:max-w-[400px] flex flex-col items-center gap-4 text-center p-6">
@@ -55,7 +61,7 @@ const CallNotification = ({ incomingCall }: CallNotificationProps) => {
           </Button>
           <Button
             variant="default"
-            onClick={() => joinVideoCall(incomingCall)}
+            onClick={() => joinCall(incomingCall)}
             className="flex items-center gap-2 bg-green-500 hover:bg-green-600"
           >
             <PhoneIncoming size={20} />

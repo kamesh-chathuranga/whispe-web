@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { CallType } from "@/hooks/use-media-call";
 import Peer from "simple-peer";
 
 export interface User {
@@ -49,6 +50,7 @@ export interface IncomingCall {
   caller: Person;
   receiver: Person;
   isRinging: boolean;
+  callType: CallType;
 }
 
 export interface PeerData {

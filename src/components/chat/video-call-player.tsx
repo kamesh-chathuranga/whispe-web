@@ -14,7 +14,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { Button } from "../ui/button";
-import useVideoCall from "@/hooks/use-video-call";
+import useVideoCall from "@/hooks/use-media-call";
 
 const VideoCallPlayer = () => {
   const { localStream, peer, incomingCall } = useStore();

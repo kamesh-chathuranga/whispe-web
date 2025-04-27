@@ -29,7 +29,7 @@ import {
 import Notification from "./custom/notification";
 import CallNotification from "./custom/call-notification";
 import { SignalData } from "simple-peer";
-import useVideoCall from "@/hooks/use-video-call";
+import useVideoCall from "@/hooks/use-media-call";
 
 const sideBarData = [
   {
@@ -275,7 +275,10 @@ const SideBar = () => {
 
   return (
     <>
-      <CallNotification incomingCall={incomingCallDetails} />
+      <CallNotification
+        incomingCall={incomingCallDetails}
+        currentUserId={currentUser?.id}
+      />
       <div className="flex flex-col h-full items-center justify-between w-12 bg-slate-300/80 px-1 py-1.5">
         <div>
           <Button variant="ghost" size="icon" className="mb-3.5">

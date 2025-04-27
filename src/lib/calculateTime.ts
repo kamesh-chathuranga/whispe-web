@@ -76,3 +76,22 @@ export function formatLastSeen(date: string): string {
     })}`;
   }
 }
+
+export function formatCallDuration(seconds: number): string {
+  if (seconds < 0) return "00:00";
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = seconds % 60;
+
+  // Format with leading zeros
+  const formattedMinutes = minutes.toString().padStart(2, "0");
+  const formattedSeconds = remainingSeconds.toString().padStart(2, "0");
+
+  // Only include hours if the call is at least an hour long
+  if (hours > 0) {
+    return `${hours}:${formattedMinutes}:${formattedSeconds}`;
+  }
+
+  return `${formattedMinutes}:${formattedSeconds}`;
+}

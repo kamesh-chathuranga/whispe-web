@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { useCallback } from "react";
 import Peer, { SignalData } from "simple-peer";
 
-const useVideoCall = () => {
+export type CallType = "video" | "audio";
+
+const useMediaCall = () => {
   const {
     localStream,
     setLocalStream,
@@ -102,7 +104,7 @@ const useVideoCall = () => {
   );
 
   const getMediaStream = useCallback(
-    async (facingMode?: string) => {
+    async (callType: CallType = "video", facingMode?: string) => {
       if (localStream) {
         return localStream;
       }
@@ -112,19 +114,25 @@ const useVideoCall = () => {
         const videoDevices = devices.filter(
           (device) => device.kind === "videoinput"
         );
-        const stream = await navigator.mediaDevices.getUserMedia({
+
+        const constraints: MediaStreamConstraints = {
           audio: true,
-          video: {
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 360, ideal: 720, max: 1080 },
-            frameRate: { min: 15, ideal: 30, max: 60 },
-            facingMode: videoDevices.length > 0 ? facingMode : undefined,
-          },
-        });
+          video:
+            callType === "video"
+              ? {
+                  width: { min: 640, ideal: 1280, max: 1920 },
+                  height: { min: 360, ideal: 720, max: 1080 },
+                  frameRate: { min: 15, ideal: 30, max: 60 },
+                  facingMode: videoDevices.length > 0 ? facingMode : undefined,
+                }
+              : false,
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         setLocalStream(stream);
         return stream;
       } catch (error) {
-        console.error("Error accessing media devices.", error);
+        console.error(`Error accessing ${callType} devices.`, error);
         setLocalStream(null);
         return null;
       }
@@ -132,51 +140,59 @@ const useVideoCall = () => {
     [localStream, setLocalStream]
   );
 
-  const startVideoCall = useCallback(async () => {
-    setIsCallEnded(false);
-    if (!chat) return;
+  const startCall = useCallback(
+    async (callType: CallType = "video") => {
+      setIsCallEnded(false);
+      if (!chat) return;
 
-    const stream = await getMediaStream();
+      const stream = await getMediaStream(callType);
 
-    if (!stream) {
-      console.error("Unable to access media devices.");
-      return;
-    }
-
-    const caller = {
-      _id: currentUser?.id,
-      name: currentUser?.name,
-      avatarUrl: currentUser?.avatarUrl,
-    };
-
-    socket.emit(
-      "call",
-      {
-        caller,
-        receiver: { ...chat.partner },
-      },
-      (response: any) => {
-        if (response.status === 200) {
-          console.log("Call initiated successfully", response.data);
-        } else {
-          console.error("Error initiating call", response.error);
-        }
+      if (!stream) {
+        console.error(`Unable to access ${callType} devices.`);
+        return;
       }
-    );
 
-    router.push("/dashboard/calls");
-  }, [
-    chat,
-    currentUser?.avatarUrl,
-    currentUser?.id,
-    currentUser?.name,
-    getMediaStream,
-    router,
-    setIsCallEnded,
-  ]);
+      const caller = {
+        _id: currentUser?.id,
+        name: currentUser?.name,
+        avatarUrl: currentUser?.avatarUrl,
+      };
 
-  const joinVideoCall = useCallback(
+      socket.emit(
+        "call",
+        {
+          caller,
+          receiver: { ...chat.partner },
+          callType,
+        },
+        (response: any) => {
+          if (response.status === 200) {
+            console.log(
+              `${callType} call initiated successfully`,
+              response.data
+            );
+          } else {
+            console.error(`Error initiating ${callType} call`, response.error);
+          }
+        }
+      );
+
+      router.push("/dashboard/calls");
+    },
+    [
+      chat,
+      currentUser?.avatarUrl,
+      currentUser?.id,
+      currentUser?.name,
+      getMediaStream,
+      router,
+      setIsCallEnded,
+    ]
+  );
+
+  const joinCall = useCallback(
     async (incomingCall: IncomingCall) => {
+      const callType = incomingCall.callType || "video";
       setIsCallEnded(false);
       setIncomingCall({
         ...incomingCall,
@@ -184,10 +200,10 @@ const useVideoCall = () => {
       });
       router.push("/dashboard/calls");
 
-      const stream = await getMediaStream();
+      const stream = await getMediaStream(callType);
 
       if (!stream) {
-        console.error("Unable to access media devices.");
+        console.error(`Unable to access ${callType} devices.`);
         return;
       }
 
@@ -219,7 +235,13 @@ const useVideoCall = () => {
     ]
   );
 
-  return { startVideoCall, joinVideoCall, handleHangUp, createPeerConnection };
+  return {
+    startVideoCall: () => startCall("video"),
+    startAudioCall: () => startCall("audio"),
+    joinCall,
+    handleHangUp,
+    createPeerConnection,
+  };
 };
 
-export default useVideoCall;
+export default useMediaCall;

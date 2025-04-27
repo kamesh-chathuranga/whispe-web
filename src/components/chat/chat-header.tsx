@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import { FriendStatus, SingleChat } from "@/types/types";
 import { Phone, Search, UserIcon, Video } from "lucide-react";
-import useVideoCall from "@/hooks/use-video-call";
+import useVideoCall from "@/hooks/use-media-call";
 import { useStore } from "@/store";
 import { cn } from "@/lib/utils";
 import { formatLastSeen } from "@/lib/calculateTime";
@@ -23,7 +23,7 @@ const ChatHeader = ({ chat }: ChatHeaderProps) => {
     )
   );
 
-  const { startVideoCall } = useVideoCall();
+  const { startVideoCall, startAudioCall } = useVideoCall();
 
   return (
     <div className="flex items-center justify-between p-3 h-[10%] border-b border-gray-200">
@@ -56,7 +56,7 @@ const ChatHeader = ({ chat }: ChatHeaderProps) => {
           <Button variant="ghost" onClick={startVideoCall}>
             <Video />
           </Button>
-          <Button variant="ghost">
+          <Button variant="ghost" onClick={startAudioCall}>
             <Phone />
           </Button>
         </div>
