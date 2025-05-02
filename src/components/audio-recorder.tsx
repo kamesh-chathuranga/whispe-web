@@ -6,21 +6,19 @@ import React, {
   useState,
 } from "react";
 
-import { FaMicrophone, FaRegTrashAlt } from "react-icons/fa";
-import { Button } from "./ui/button";
-import { FaPlay } from "react-icons/fa";
-import { CiPause1 } from "react-icons/ci";
-import { LuSend } from "react-icons/lu";
+import { Button } from "@/components/ui/button";
+import { Trash2, Mic, Play, Pause, SendHorizonal } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
 import { useStore } from "@/store";
 import axios from "axios";
+import socket from "@/lib/socket";
 
 interface AudioRecorderProps {
   showAudioRecorderHandler: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
-  const { currentUser, currentChat, socket } = useStore();
+  const { currentUser, currentChat } = useStore();
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudio, setRecordedAudio] = useState<HTMLAudioElement | null>(
@@ -175,20 +173,19 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
         },
         params: {
           from: currentUser?.id,
-          to: currentChat?.id,
-        }
-      })
+          to: currentChat?._id,
+        },
+      });
 
       if (response.status == 200) {
-        socket.current?.emit("send-message", {
+        socket.emit("send-message", {
           from: currentUser?.id,
-          to: currentChat?.id,
+          to: currentChat?._id,
           message: response.data,
         });
-        
       }
     } catch (error) {
-      
+      console.log("Error sending audio", error);
     }
   };
 
@@ -207,7 +204,7 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
         onClick={() => showAudioRecorderHandler(false)}
         size="icon"
       >
-        <FaRegTrashAlt />
+        <Trash2 />
       </Button>
 
       <div className="flex items-center gap-x-3 py-1 px-3 text-base border rounded-full drop-shadow-lg">
@@ -222,7 +219,7 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
               <Fragment>
                 {!isPlaying ? (
                   <Button variant="link" size="icon" onClick={audioPlayHandler}>
-                    <FaPlay />
+                    <Play />
                   </Button>
                 ) : (
                   <Button
@@ -230,7 +227,7 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
                     size="icon"
                     onClick={audioPauseHandler}
                   >
-                    <CiPause1 />
+                    <Pause />
                   </Button>
                 )}
               </Fragment>
@@ -253,7 +250,7 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
       <div className="mr-4">
         {!isRecording ? (
           <Button variant="ghost" size="icon" onClick={recordingStartHandler}>
-            <FaMicrophone />
+            <Mic />
           </Button>
         ) : (
           <Button
@@ -262,14 +259,14 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
             className="text-red-500"
             onClick={recordingPauseHandler}
           >
-            <CiPause1 />
+            <Pause />
           </Button>
         )}
       </div>
 
       <Button className="bg-primary" size="icon" onClick={sendRecordedAudio}>
         {" "}
-        <LuSend />
+        <SendHorizonal />
       </Button>
     </div>
   );

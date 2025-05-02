@@ -2,7 +2,7 @@ import { DEFAULT_SIGNOUT_REDIRECT } from "@/routes";
 import axios from "axios";
 
 const options = {
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: `${process.env.NEXT_PUBLIC_API_BASE_HOST}/api/v1`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",

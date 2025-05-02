@@ -1,17 +1,18 @@
+import { Check, CheckCheck } from "lucide-react";
 import React, { Fragment } from "react";
-
-import { BsCheck, BsCheckAll } from "react-icons/bs";
 
 interface MessageStatusProps {
   status: string;
 }
 
 const MessageStatus = ({ status }: MessageStatusProps) => {
-  return <Fragment>
-    {status === "sent" && <BsCheck className="text-lg" />}
-    {status === "delivered" && <BsCheck className="text-lg"/>}
-    {status === "read" && <BsCheckAll className="text-lg text-white" />}
-  </Fragment>;
+  return (
+    <Fragment>
+      {status === "sent" && <Check className="text-lg" />}
+      {status === "delivered" && <Check className="text-lg" />}
+      {status === "read" && <CheckCheck className="text-lg text-white" />}
+    </Fragment>
+  );
 };
 
 export default MessageStatus;
