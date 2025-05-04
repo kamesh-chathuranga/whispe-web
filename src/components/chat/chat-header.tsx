@@ -10,6 +10,7 @@ import useVideoCall from "@/hooks/use-media-call";
 import { useStore } from "@/store";
 import { cn } from "@/lib/utils";
 import { formatLastSeen } from "@/lib/calculateTime";
+import { Separator } from "../ui/separator";
 
 interface ChatHeaderProps {
   chat: SingleChat;
@@ -52,11 +53,20 @@ const ChatHeader = ({ chat }: ChatHeaderProps) => {
       </div>
 
       <div className="flex items-center gap-x-1">
-        <div className="bg-muted/30">
-          <Button variant="ghost" onClick={startVideoCall}>
+        <div className="bg-muted/30 border rounded-sm flex items-center justify-center ">
+          <Button
+            variant="ghost"
+            className="rounded-none"
+            onClick={startVideoCall}
+          >
             <Video />
           </Button>
-          <Button variant="ghost" onClick={startAudioCall}>
+          <Separator orientation="vertical" className="h-6" />
+          <Button
+            variant="ghost"
+            className="rounded-none"
+            onClick={startAudioCall}
+          >
             <Phone />
           </Button>
         </div>

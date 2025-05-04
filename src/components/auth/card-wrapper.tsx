@@ -1,7 +1,7 @@
 import React from "react";
 
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
-import Header from "./header";
+import FormHeader from "./form-header";
 import BackButton from "./back-button";
 
 interface CardWrapperProps {
@@ -20,7 +20,7 @@ const CardWrapper = ({
   return (
     <Card className="w-[400px] shadow-md">
       <CardHeader>
-        <Header label={headerLabel} />
+        <FormHeader label={headerLabel} />
       </CardHeader>
       <CardContent>{children}</CardContent>
       <CardFooter>

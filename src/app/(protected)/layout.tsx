@@ -1,14 +1,14 @@
 import React from "react";
-import SideBar from "@/components/side-bar";
+import SideBar from "@/components/chat/side-bar";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import ChatTopBar from "@/components/chat-top-bar";
-import SearchBar from "@/components/search-bar";
+import ChatTopBar from "@/components/chat/chat-top-bar";
+import SearchBar from "@/components/chat/search-bar";
 import ChatList from "@/components/chat/chat-list";
-import SyncUserStore from "@/components/sync-user-store";
+import SyncUserStore from "@/components/custom/sync-user-store";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

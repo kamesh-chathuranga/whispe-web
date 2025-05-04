@@ -1,6 +1,6 @@
-import FriendRequestCardContainer from "@/components/custom/friend-request-card-container";
-import ProfileCardContainer from "@/components/custom/profile-card-container";
-import SentRequestCardContainer from "@/components/custom/sent-request-card-container";
+import FriendRequestCardContainer from "@/components/dashboard/friend-request-card-container";
+import ProfileCardContainer from "@/components/dashboard/profile-card-container";
+import SentRequestCardContainer from "@/components/dashboard/sent-request-card-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function TabsDemo() {

@@ -14,7 +14,7 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import FormError from "../form-error";
+import FormError from "./form-error";
 import { Loader } from "lucide-react";
 import API from "@/lib/axios";
 import { useRouter } from "next/navigation";

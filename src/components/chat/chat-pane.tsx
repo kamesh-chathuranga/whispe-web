@@ -4,12 +4,12 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "./ui/resizable";
+} from "../ui/resizable";
 import SideBar from "./side-bar";
 import SearchBar from "./search-bar";
 import ChatTopBar from "./chat-top-bar";
-import ChatList from "./chat/chat-list";
-import RightSidePanel from "./chat/right-side-panel";
+import ChatList from "./chat-list";
+import RightSidePanel from "./right-side-panel";
 
 const ChatPane = () => {
   return (

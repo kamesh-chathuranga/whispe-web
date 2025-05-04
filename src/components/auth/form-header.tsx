@@ -7,11 +7,11 @@ const font = Poppins({
   weight: ["500"],
 });
 
-interface HeaderProps {
+interface FormHeaderProps {
   label: string;
 }
 
-const Header = ({ label }: HeaderProps) => {
+const FormHeader = ({ label }: FormHeaderProps) => {
   return (
     <div className="flex flex-col items-center justify-center gap-y-4 w-full">
       <h1 className={cn("text-3xl font-semibold", font.className)}>Chatter</h1>
@@ -20,4 +20,4 @@ const Header = ({ label }: HeaderProps) => {
   );
 };
 
-export default Header;
+export default FormHeader;

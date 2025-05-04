@@ -1,7 +1,7 @@
 "use client";
 
-import React  from "react";
-import { Button } from "./ui/button";
+import React from "react";
+import { Button } from "../ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+} from "../ui/dropdown-menu";
 import { ListFilter, MessageSquare } from "lucide-react";
 
 const ChatTopBar = () => {

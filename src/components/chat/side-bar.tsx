@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Button } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Button } from "../ui/button";
 import {
   LogOutIcon,
   MenuIcon,
@@ -26,8 +26,8 @@ import {
   Message,
   ReceivedFriendRequest,
 } from "@/types/types";
-import Notification from "./custom/notification";
-import CallNotification from "./custom/call-notification";
+import Notification from "../custom/notification";
+import CallNotification from "../custom/call-notification";
 import { SignalData } from "simple-peer";
 import useVideoCall from "@/hooks/use-media-call";
 
@@ -71,7 +71,7 @@ const NavigationButton = ({ icon, path }: NavigationButtonProps) => {
       </div> */}
       {icon}
       {pathname.includes(path) && (
-        <div className="absolute left-0 w-1 bg-blue-500 top-1 bottom-1 rounded-lg" />
+        <div className="absolute left-0 w-1 bg-green-500 top-1 bottom-1 rounded-lg" />
       )}
     </Button>
   );
@@ -279,7 +279,7 @@ const SideBar = () => {
         incomingCall={incomingCallDetails}
         currentUserId={currentUser?.id}
       />
-      <div className="flex flex-col h-full items-center justify-between w-12 bg-slate-300/80 px-1 py-1.5">
+      <div className="flex flex-col h-full items-center justify-between w-12 bg-gray-100/90 border-r-2 px-1 py-1.5">
         <div>
           <Button variant="ghost" size="icon" className="mb-3.5">
             <MenuIcon />

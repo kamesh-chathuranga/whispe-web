@@ -11,9 +11,6 @@ export default {
     extend: {
       colors: {
         "icon-ack": "#53bdeb",
-
-        "message-receive": "#edeff2",
-        "message-send": "#017aff",
         "message-time": "#b0b0b1",
 
         background: "hsl(var(--background))",
