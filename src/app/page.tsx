@@ -5,7 +5,7 @@ import NavBar from "@/components/home/nav-bar";
 
 const HomePage = () => {
   return (
-    <main className="min-h-screen flex flex-col">
+    <main className="min-h-screen flex flex-col bg-gradient-to-br from-green-400 via-green-500 to-green-300">
       <NavBar />
       <main className="flex-grow">
         <HeroSection />

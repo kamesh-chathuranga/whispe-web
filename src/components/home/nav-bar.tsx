@@ -29,12 +29,6 @@ const NavBar: React.FC<NavBarProps> = ({ className }) => {
             href="#"
             className="text-gray-600 hover:text-chatters-primary transition-colors"
           >
-            Pricing
-          </a>
-          <a
-            href="#"
-            className="text-gray-600 hover:text-chatters-primary transition-colors"
-          >
             Support
           </a>
         </nav>

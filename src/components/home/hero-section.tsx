@@ -32,7 +32,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ className }) => {
           </p>
 
           <div className="animate-pulse-light">
-            <JoinButton size="lg" />
+            <JoinButton size="lg" className="bg-white text-green-500 shadow-xl" />
           </div>
         </div>
 

@@ -63,7 +63,7 @@ const NavigationButton = ({ icon, path }: NavigationButtonProps) => {
       key={path}
       variant="ghost"
       size="icon"
-      className={`${pathname.includes(path) && "bg-accent"} relative mb-1`}
+      className={`${pathname.includes(path) && "bg-gray-200"} relative mb-1`}
       onClick={() => router.push(path)}
     >
       {/* <div className="bg-blue-500 absolute -top-1 right-0 text-xs rounded-full px-[5px] py-[1px] text-white">

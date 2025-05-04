@@ -44,7 +44,7 @@ const MessageContainer = ({
 
       {isTyping && (
         <div className="flex my-1 justify-start">
-          <div className="px-2 py-[5px] text-sm flex items-center gap-1 max-w-[45%] bg-white text-black rounded-sm shadow-md">
+          <div className="px-3 py-[8px] text-sm flex items-center gap-1 max-w-[45%] bg-white text-black rounded-sm shadow-md">
             <span
               className="block w-1 h-1 bg-gray-500 rounded-full animate-bounce"
               style={{ animationDelay: "0s" }}

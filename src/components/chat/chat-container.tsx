@@ -156,12 +156,12 @@ const ChatContainer: React.FC = () => {
     <div className="flex flex-col h-screen w-full">
       <ChatHeader chat={currentChat} />
       <MessageContainer
+        ref={containerRef}
+        onScroll={handleScroll}
         isTyping={isTyping}
         messages={messages}
         currentUserId={currentUser.id}
         loadingHistory={loadingHistory || isLoading}
-        ref={containerRef}
-        onScroll={handleScroll}
       />
       <MessageBar
         setMessage={sendMessage}
