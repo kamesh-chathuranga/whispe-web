@@ -12,21 +12,49 @@ import API from "@/lib/axios";
 import { AxiosError } from "axios";
 import toast from "react-hot-toast";
 
-const ChatContainer: React.FC = () => {
+const ChatContainer = () => {
   const pathname = usePathname();
   const chatId = pathname?.split("/")[2] ?? null;
 
+  const { chatList, currentUser, messages, setMessages } = useStore();
+  const currentChat = chatList.find((c) => c._id === chatId);
+
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const { chatList, currentUser, messages, setMessages } = useStore();
-  const currentChat = chatList.find((c) => c._id === chatId);
   const isNearBottomRef = useRef(true);
-
-  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const prevScrollHeightRef = useRef(0);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setIsLoading(true);
+        const response = await API.post("/messages", {
+          chatId,
+          before: undefined,
+          limit: 20,
+        });
+        console.log("Messages:", response.data);
+
+        setMessages(response.data);
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          toast.error(error.response?.data.message, { position: "top-center" });
+        } else {
+          toast.error(
+            "An error occurred while fetching messages. Please try again.",
+            { position: "top-center" }
+          );
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [chatId, setMessages]);
 
   useEffect(() => {
     socket.on("typing", () => {
@@ -44,29 +72,99 @@ const ChatContainer: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      try {
-        setIsLoading(true);
-        const response = await API.post("/messages", {
-          chatId,
-          before: undefined,
-          limit: 20,
-        });
-        setMessages(response.data);
-      } catch (error) {
-        if (error instanceof AxiosError) {
-          toast.error(error.response?.data.message, { position: "top-center" });
-        } else {
-          toast.error(
-            "An error occurred while fetching messages. Please try again.",
-            { position: "top-center" }
-          );
-        }
-      } finally {
-        setIsLoading(false);
+    if (containerRef.current && messages.length > 0 && !isLoading) {
+      const scrollContainer = containerRef.current;
+      scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
+  }, [messages, isLoading]);
+
+  useEffect(() => {
+    if (containerRef.current && messages.length > 0) {
+      const scrollContainer = containerRef.current;
+      const isNearBottom =
+        scrollContainer.scrollHeight -
+          scrollContainer.scrollTop -
+          scrollContainer.clientHeight <
+        200;
+
+      isNearBottomRef.current = isNearBottom;
+
+      if (isNearBottom) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
-    })();
-  }, [chatId, setMessages]);
+    }
+  }, [isTyping, messages.length]);
+
+  useEffect(() => {
+    if (
+      containerRef.current &&
+      prevScrollHeightRef.current > 0 &&
+      !loadingHistory
+    ) {
+      const newScrollHeight = containerRef.current.scrollHeight;
+      const scrollDiff = newScrollHeight - prevScrollHeightRef.current;
+
+      containerRef.current.scrollTop = scrollDiff;
+      prevScrollHeightRef.current = 0;
+    }
+  }, [loadingHistory, messages]);
+
+  const loadPreviousMessages = useCallback(async () => {
+    if (!chatId || loadingHistory || !hasMore) return;
+
+    try {
+      setLoadingHistory(true);
+
+      const oldestMessageId =
+        messages.length > 0 ? messages[0].createdAt : undefined;
+
+      const response = await API.post("/messages", {
+        chatId,
+        before: oldestMessageId,
+        limit: 20,
+      });
+
+      if (response.data.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      if (containerRef.current) {
+        prevScrollHeightRef.current = containerRef.current.scrollHeight;
+      }
+
+      const updatedMessages = [...response.data, ...messages];
+      setMessages(updatedMessages);
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        toast.error(error.response?.data.message, { position: "top-center" });
+      } else {
+        toast.error("An error occurred while fetching previous messages.", {
+          position: "top-center",
+        });
+      }
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, [chatId, loadingHistory, hasMore, messages, setMessages]);
+
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+
+    const { scrollTop } = containerRef.current;
+
+    if (scrollTop < 50 && !loadingHistory && hasMore) {
+      loadPreviousMessages();
+    }
+
+    const isNearBottom =
+      containerRef.current.scrollHeight -
+        containerRef.current.scrollTop -
+        containerRef.current.clientHeight <
+      200;
+
+    isNearBottomRef.current = isNearBottom;
+  }, [loadingHistory, hasMore, loadPreviousMessages]);
 
   const handleTypingStatus = useCallback(() => {
     socket.emit("typing", chatId);
@@ -77,57 +175,6 @@ const ChatContainer: React.FC = () => {
       socket.emit("typing:stop", chatId);
     }, 1000);
   }, [chatId]);
-
-  const fetchHistory = useCallback(() => {
-    if (!chatId || loadingHistory || !hasMore) return;
-
-    const el = containerRef.current;
-    if (!el) return;
-
-    const prevScrollHeight = el.scrollHeight;
-    const prevScrollTop = el.scrollTop;
-
-    setLoadingHistory(true);
-    const oldest = messages[0]?.createdAt ?? null;
-
-    socket.emit(
-      "message:history",
-      { chatId, before: oldest, limit: 20 },
-      (res: any) => {
-        if (res.status === 200 && res.data.length) {
-          setMessages([...res.data, ...messages]);
-          if (res.data.length < 20) {
-            setHasMore(false);
-          }
-        } else {
-          setHasMore(false);
-        }
-        setLoadingHistory(false);
-
-        setTimeout(() => {
-          if (containerRef.current) {
-            const newScrollHeight = containerRef.current.scrollHeight;
-            containerRef.current.scrollTop =
-              prevScrollTop + (newScrollHeight - prevScrollHeight);
-          }
-        }, 0);
-      }
-    );
-  }, [chatId, loadingHistory, hasMore, messages, setMessages]);
-
-  const handleScroll = useCallback(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    if (el.scrollTop < 100) {
-      fetchHistory();
-    }
-
-    const threshold = 100;
-    const isNearBottom =
-      el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
-    isNearBottomRef.current = isNearBottom;
-  }, [fetchHistory]);
 
   const sendMessage = useCallback(
     (message: string) => {
@@ -156,12 +203,12 @@ const ChatContainer: React.FC = () => {
     <div className="flex flex-col h-screen w-full">
       <ChatHeader chat={currentChat} />
       <MessageContainer
-        ref={containerRef}
-        onScroll={handleScroll}
         isTyping={isTyping}
         messages={messages}
         currentUserId={currentUser.id}
         loadingHistory={loadingHistory || isLoading}
+        ref={containerRef}
+        onScroll={handleScroll}
       />
       <MessageBar
         setMessage={sendMessage}
