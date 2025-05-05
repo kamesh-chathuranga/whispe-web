@@ -8,9 +8,11 @@ interface MessageStatusProps {
 const MessageStatus = ({ status }: MessageStatusProps) => {
   return (
     <Fragment>
-      {status === "sent" && <Check className="text-lg" />}
-      {status === "delivered" && <Check className="text-lg" />}
-      {status === "read" && <CheckCheck className="text-lg text-white" />}
+      {status === "sent" && <Check size={12} className="text-gray-500" />}
+      {status === "delivered" && (
+        <CheckCheck size={12} className="text-gray-500" />
+      )}
+      {status === "read" && <CheckCheck size={12} className=" text-blue-500" />}
     </Fragment>
   );
 };

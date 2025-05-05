@@ -44,6 +44,7 @@ export interface Message {
   attachments?: any[];
   createdAt: string;
   chat: string;
+  status: "sent" | "delivered" | "read";
 }
 
 export interface IncomingCall {

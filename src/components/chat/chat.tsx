@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
 import Image from "next/image";
 import { useStore } from "@/store";
+import { formatLastMessageTime } from "@/lib/calculateTime";
 
 const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
   const pathName = usePathname();
@@ -103,7 +104,16 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
             )}
           </div>
           <div ref={containerRef} className="ml-3 flex-1 overflow-hidden">
-            <p className="text-sm font-medium text-gray-900">{partner.name}</p>
+            <div className="flex justify-between items-center">
+              <p className="text-sm font-medium text-gray-900">
+                {partner.name}
+              </p>
+              <span className="text-xs text-gray-500">
+                {lastMessage
+                  ? formatLastMessageTime(lastMessage.createdAt)
+                  : ""}
+              </span>
+            </div>
             <p
               className="mt-1 text-sm text-gray-500"
               style={{ whiteSpace: "nowrap" }}

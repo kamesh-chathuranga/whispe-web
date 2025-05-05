@@ -1,11 +1,12 @@
 import React from "react";
 import {
-  calculateTime,
+  formatMessageTimestamp,
   formatDateSeparator,
   isSameDay,
 } from "@/lib/calculateTime";
 import { cn } from "@/lib/utils";
 import { Message } from "@/types/types";
+import MessageStatus from "./message-status";
 
 interface MessageBubbleProps {
   idx: number;
@@ -39,7 +40,7 @@ const MessageBubble = ({
       )}
 
       <div
-        className={cn("flex mb-[1px]", isOwn ? "justify-end" : "justify-start")}
+        className={cn("flex mb-0.5", isOwn ? "justify-end" : "justify-start")}
       >
         <div
           className={cn(
@@ -52,10 +53,13 @@ const MessageBubble = ({
           )}
         >
           <span className="break-all">{message.content}</span>
-          <div className="flex gap-1 self-end items-end -mb-[6px] -mr-[2px] min-w-fit">
+          <div className="flex gap-1 self-end items-center -mb-[6px] -mr-[2px] min-w-fit">
             <span className="pt-1 min-w-fit text-[9.5px] text-message-time">
-              {calculateTime(messageDate)}
+              {formatMessageTimestamp(messageDate)}
             </span>
+            {message.sender._id === currentUserId && (
+              <MessageStatus status={message.status} />
+            )}
           </div>
         </div>
       </div>

@@ -29,6 +29,22 @@ const ChatContainer = () => {
   const prevScrollHeightRef = useRef(0);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const markMessagesAsRead = useCallback(() => {
+    if (!socket || !messages.length) return;
+
+    // Get unread messages that weren't sent by the current user
+    const unreadMessages = messages.filter(
+      (message) =>
+        message.sender._id !== currentUser?.id &&
+        (message.status === "sent" || message.status === "delivered")
+    );
+
+    // Mark each as read
+    unreadMessages.forEach((message) => {
+      socket.emit("message:read", { messageId: message._id });
+    });
+  }, [messages, currentUser]);
+
   useEffect(() => {
     (async () => {
       try {
@@ -56,6 +72,13 @@ const ChatContainer = () => {
     })();
   }, [chatId, setMessages]);
 
+  // Second effect just for marking messages as read
+  useEffect(() => {
+    if (chatId && messages.length > 0) {
+      markMessagesAsRead();
+    }
+  }, [chatId, messages, markMessagesAsRead]);
+
   useEffect(() => {
     socket.on("typing", () => {
       setIsTyping(true);
@@ -70,6 +93,21 @@ const ChatContainer = () => {
       socket.off("typing:stop");
     };
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("message:status", ({ messageId, status }) => {
+      const updatedMessages = messages.map((message) =>
+        message._id === messageId ? { ...message, status } : message
+      );
+      setMessages(updatedMessages);
+    });
+
+    return () => {
+      socket.off("message:status");
+    };
+  }, [messages, setMessages]);
 
   useEffect(() => {
     if (containerRef.current && messages.length > 0 && !isLoading) {

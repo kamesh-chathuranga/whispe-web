@@ -5,7 +5,6 @@ import React, { useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Button } from "../ui/button";
 import {
-  LogOutIcon,
   MenuIcon,
   MessageCircleMoreIcon,
   PhoneIcon,
@@ -30,6 +29,7 @@ import Notification from "../custom/notification";
 import CallNotification from "../custom/call-notification";
 import { SignalData } from "simple-peer";
 import useVideoCall from "@/hooks/use-media-call";
+import LogoutButton from "../custom/logout-button";
 
 const sideBarData = [
   {
@@ -156,6 +156,10 @@ const SideBar = () => {
     });
 
     socket.on("message:new", (message: Message) => {
+      if (message.sender._id !== currentUser.id) {
+        socket.emit("message:delivered", { messageId: message._id });
+      }
+
       const chat = chatList.map((chat) =>
         chat._id === message.chat ? { ...chat, lastMessage: message } : chat
       );
@@ -166,6 +170,7 @@ const SideBar = () => {
         currentUser.id !== message.sender._id;
 
       if (!shouldNotified) return;
+
       toast.custom(
         (t) => (
           <Notification
@@ -289,9 +294,7 @@ const SideBar = () => {
           ))}
         </div>
         <div>
-          <Button variant="ghost" size="icon" onClick={handleLogout}>
-            <LogOutIcon />
-          </Button>
+          <LogoutButton onLogout={handleLogout} />
           <Button variant="ghost" size="icon" className="mb-2">
             <SettingsIcon />
           </Button>

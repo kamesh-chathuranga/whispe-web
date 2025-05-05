@@ -1,4 +1,4 @@
-export function calculateTime(date: Date) {
+export function formatMessageTimestamp(date: Date) {
   let hours = date.getHours();
   const minutes = date.getMinutes();
 
@@ -60,7 +60,7 @@ export function formatLastSeen(date: string): string {
   yesterday.setDate(today.getDate() - 1);
 
   // Format the time part (reusing existing function)
-  const timeString = calculateTime(lastSeenDate);
+  const timeString = formatMessageTimestamp(lastSeenDate);
 
   // Check if the date is today or yesterday
   if (isSameDay(lastSeenDate, today)) {
@@ -95,3 +95,36 @@ export function formatCallDuration(seconds: number): string {
 
   return `${formattedMinutes}:${formattedSeconds}`;
 }
+
+export const formatLastMessageTime = (
+  timestamp: string | Date | undefined
+): string => {
+  if (!timestamp) return "";
+
+  const messageDate = new Date(timestamp);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  // Compare dates without time
+  const messageDay = messageDate.toDateString();
+  const todayDay = today.toDateString();
+  const yesterdayDay = yesterday.toDateString();
+
+  if (messageDay === todayDay) {
+    // Today - show time only
+    return messageDate.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } else if (messageDay === yesterdayDay) {
+    // Yesterday
+    return "Yesterday";
+  } else {
+    // Other days - D/M/Y format
+    return `${messageDate.getDate()}/${
+      messageDate.getMonth() + 1
+    }/${messageDate.getFullYear()}`;
+  }
+};
