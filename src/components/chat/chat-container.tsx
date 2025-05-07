@@ -54,7 +54,6 @@ const ChatContainer = () => {
           before: undefined,
           limit: 20,
         });
-        console.log("Messages:", response.data);
 
         setMessages(response.data);
       } catch (error) {
@@ -241,12 +240,12 @@ const ChatContainer = () => {
     <div className="flex flex-col h-screen w-full">
       <ChatHeader chat={currentChat} />
       <MessageContainer
+        ref={containerRef}
         isTyping={isTyping}
         messages={messages}
+        onScroll={handleScroll}
         currentUserId={currentUser.id}
         loadingHistory={loadingHistory || isLoading}
-        ref={containerRef}
-        onScroll={handleScroll}
       />
       <MessageBar
         setMessage={sendMessage}

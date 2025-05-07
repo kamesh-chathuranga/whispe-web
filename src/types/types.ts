@@ -45,6 +45,7 @@ export interface Message {
   createdAt: string;
   chat: string;
   status: "sent" | "delivered" | "read";
+  isDeleted?: boolean;
 }
 
 export interface IncomingCall {

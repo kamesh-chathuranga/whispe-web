@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { Message } from "@/types/types";
 import MessageBubble from "./message-bubble";
+import ChatContextMenu from "./chat-context-menu";
 
 interface MessageContainerProps {
   messages: Message[];
@@ -21,18 +22,41 @@ const MessageContainer = ({
   onScroll,
   isTyping,
 }: MessageContainerProps) => {
+  const [chatContextOpen, setChatContextOpen] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleContainerContextMenu = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      // Only open the chat context menu if the click didn't happen on a message bubble
+      if ((e.target as HTMLElement).closest("[data-message-bubble]") === null) {
+        e.preventDefault();
+        setPosition({ x: e.clientX, y: e.clientY });
+        setChatContextOpen(true);
+      }
+    },
+    []
+  );
+
   return (
     <div
       ref={ref}
       onScroll={onScroll}
+      onContextMenu={handleContainerContextMenu}
       className="w-full h-[80vh] flex flex-col overflow-y-auto px-4 py-1 bg-[url('/chat-background.png')] bg-cover bg-no-repeat bg-center"
     >
       {loadingHistory && <p>Loading...</p>}
+
+      <ChatContextMenu
+        open={chatContextOpen}
+        onOpenChange={setChatContextOpen}
+        position={position}
+      />
 
       {messages.map((message, idx) => {
         const prevMessage = idx > 0 ? messages[idx - 1] : null;
         return (
           <MessageBubble
+            ref={ref}
             key={idx}
             idx={idx}
             message={message}

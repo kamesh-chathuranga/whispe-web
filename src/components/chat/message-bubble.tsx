@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import {
   formatMessageTimestamp,
   formatDateSeparator,
@@ -7,12 +7,14 @@ import {
 import { cn } from "@/lib/utils";
 import { Message } from "@/types/types";
 import MessageStatus from "./message-status";
+import MessageContextMenu from "./message-context-menu";
 
 interface MessageBubbleProps {
   idx: number;
   message: Message;
   currentUserId: string;
   prevMessage: Message | null;
+  ref: React.RefObject<HTMLDivElement | null>;
 }
 
 const MessageBubble = ({
@@ -20,7 +22,11 @@ const MessageBubble = ({
   message,
   currentUserId,
   prevMessage,
+  ref,
 }: MessageBubbleProps) => {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
   const messageDate = new Date(message.createdAt);
   const prevDate = prevMessage ? new Date(prevMessage.createdAt) : null;
   const showSeparator =
@@ -28,6 +34,14 @@ const MessageBubble = ({
   const hasPrevMessageFromSameUser =
     prevMessage?.sender._id === message.sender._id;
   const isOwn = message.sender._id === currentUserId;
+
+  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    console.log("Context menu opened at:", e.clientX, e.clientY);
+
+    setPosition({ x: e.clientX, y: e.clientY });
+    setOpen(true);
+  };
 
   return (
     <React.Fragment key={message._id}>
@@ -39,10 +53,21 @@ const MessageBubble = ({
         </div>
       )}
 
+      <MessageContextMenu
+        ref={ref}
+        open={open}
+        onOpenChange={setOpen}
+        position={position}
+        message={message}
+        isOwn={isOwn}
+      />
+
       <div
         className={cn("flex mb-0.5", isOwn ? "justify-end" : "justify-start")}
       >
         <div
+          data-message-bubble="true"
+          onContextMenu={handleContextMenu}
           className={cn(
             "px-2 py-[5px] text-sm flex gap-4 items-center max-w-[45%] rounded-md text-black shadow-md",
             isOwn ? "bg-[#d8fad0]" : "bg-white",
