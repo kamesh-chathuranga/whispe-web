@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { Fragment, useState } from "react";
 import {
   formatMessageTimestamp,
   formatDateSeparator,
@@ -14,7 +14,6 @@ interface MessageBubbleProps {
   message: Message;
   currentUserId: string;
   prevMessage: Message | null;
-  ref: React.RefObject<HTMLDivElement | null>;
 }
 
 const MessageBubble = ({
@@ -22,7 +21,6 @@ const MessageBubble = ({
   message,
   currentUserId,
   prevMessage,
-  ref,
 }: MessageBubbleProps) => {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -37,14 +35,12 @@ const MessageBubble = ({
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
-    console.log("Context menu opened at:", e.clientX, e.clientY);
-
     setPosition({ x: e.clientX, y: e.clientY });
     setOpen(true);
   };
 
   return (
-    <React.Fragment key={message._id}>
+    <Fragment key={message._id}>
       {showSeparator && (
         <div className="flex justify-center my-2">
           <span className="px-3 py-1 text-xs font-medium text-gray-600 bg-accent rounded-sm">
@@ -54,10 +50,9 @@ const MessageBubble = ({
       )}
 
       <MessageContextMenu
-        ref={ref}
+        position={position}
         open={open}
         onOpenChange={setOpen}
-        position={position}
         message={message}
         isOwn={isOwn}
       />
@@ -88,7 +83,7 @@ const MessageBubble = ({
           </div>
         </div>
       </div>
-    </React.Fragment>
+    </Fragment>
   );
 };
 

@@ -1,7 +1,17 @@
-import { Copy, Reply, Trash } from "lucide-react";
+import {
+  Copy,
+  Forward,
+  Info,
+  Pin,
+  Reply,
+  Share,
+  SquareCheck,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { Message } from "@/types/types";
 import socket from "@/lib/socket";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   DropdownMenu,
@@ -9,76 +19,47 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Separator } from "../ui/separator";
 
 interface MessageContextMenuProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  position: { x: number; y: number };
   message: Message;
   isOwn: boolean;
-  ref: React.RefObject<HTMLDivElement | null>;
+  position: { x: number; y: number };
 }
 
-const MessageContextMenu = ({
+const MENU_WIDTH = 192; // 12rem
+const MENU_HEIGHT = 160; // approximate height
+
+export default function MessageContextMenu({
   open,
   onOpenChange,
-  position,
   message,
-  isOwn,
-  ref,
-}: MessageContextMenuProps) => {
-  const menuRef = useRef<HTMLDivElement>(null);
-  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  // isOwn,
+  position,
+}: MessageContextMenuProps) {
+  const [adjustedPosition, setAdjustedPosition] = useState(position);
 
   useEffect(() => {
-    if (open && menuRef.current) {
-      const menuHeight = menuRef.current.offsetHeight;
-      const menuWidth = menuRef.current.offsetWidth;
+    if (!open) return;
 
-      // Find the message container element
-      // const container = document.querySelector('.h-[80vh]');
-      const containerRect = ref.current?.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    // const viewportHeight = window.innerHeight;
 
-      if (!containerRect) return;
+    // Horizontal: clamp so it never overflows right
+    const x =
+      position.x + MENU_WIDTH > viewportWidth
+        ? Math.max(0, position.x - MENU_WIDTH)
+        : position.x;
 
-      // Calculate container bounds
-      const containerTop = containerRect.top;
-      const containerBottom = containerRect.bottom;
-      const containerLeft = containerRect.left;
-      const containerRight = containerRect.right;
+    // Vertical: always open *above* the click point
+    let y = position.y - MENU_HEIGHT;
+    // Clamp to top of viewport
+    if (y < 0) y = 0;
 
-      // Consider scroll position for vertical positioning
-      // const containerScrollTop = container?.scrollTop || 0;
-
-      // By default position above the click point
-      let top = position.y - menuHeight;
-      let left = position.x;
-
-      // Check if menu would go beyond container top edge
-      if (top < containerTop) {
-        // Position below the click point if not enough space above
-        top = position.y;
-      }
-
-      // Check if menu would go beyond container bottom edge
-      if (top + menuHeight > containerBottom) {
-        // Adjust to fit within container
-        top = Math.max(containerTop, containerBottom - menuHeight);
-      }
-
-      // Check if menu would go beyond container right edge
-      if (left + menuWidth > containerRight) {
-        left = Math.max(containerLeft, position.x - menuWidth);
-      }
-
-      // Check if menu would go beyond container left edge
-      if (left < containerLeft) {
-        left = containerLeft;
-      }
-
-      setMenuPosition({ top, left });
-    }
-  }, [open, position, menuRef, ref]);
+    setAdjustedPosition({ x, y });
+  }, [open, position]);
 
   const handleDeleteForMe = useCallback(() => {
     if (message._id) {
@@ -87,12 +68,12 @@ const MessageContextMenu = ({
     }
   }, [message._id, onOpenChange]);
 
-  const handleDeleteForEveryone = useCallback(() => {
-    if (message._id && isOwn) {
-      socket.emit("message:deleteForEveryone", { messageId: message._id });
-      onOpenChange(false);
-    }
-  }, [message._id, isOwn, onOpenChange]);
+  // const handleDeleteForEveryone = useCallback(() => {
+  //   if (message._id && isOwn) {
+  //     socket.emit("message:deleteForEveryone", { messageId: message._id });
+  //     onOpenChange(false);
+  //   }
+  // }, [message._id, isOwn, onOpenChange]);
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(message.content);
@@ -101,44 +82,62 @@ const MessageContextMenu = ({
 
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
+      {/* Hidden trigger since we're manually positioning */}
       <DropdownMenuTrigger className="hidden" />
+
       <DropdownMenuContent
-        ref={menuRef}
-        side="right"
-        sideOffset={5}
-        align="start"
         style={{
           position: "fixed",
-          top: menuPosition.top,
-          left: menuPosition.left,
+          top: adjustedPosition.y,
+          left: adjustedPosition.x,
           zIndex: 50,
-          maxHeight: "calc(80vh - 20px)", // Ensure menu doesn't exceed container height
-          overflowY: "auto",
         }}
-        className="w-48"
+        className="w-48 origin-bottom-left"
         onContextMenu={(e) => e.preventDefault()}
       >
-        <DropdownMenuItem onClick={handleCopy}>
-          <Copy className="mr-2 h-4 w-4" />
-          <span>Copy</span>
-        </DropdownMenuItem>
         <DropdownMenuItem>
           <Reply className="mr-2 h-4 w-4" />
           <span>Reply</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleDeleteForMe}>
-          <Trash className="mr-2 h-4 w-4" />
-          <span>Delete for me</span>
+        <DropdownMenuItem onClick={handleCopy}>
+          <Copy className="mr-2 h-4 w-4" />
+          <span>Copy</span>
         </DropdownMenuItem>
-        {isOwn && (
-          <DropdownMenuItem onClick={handleDeleteForEveryone}>
-            <Trash className="mr-2 h-4 w-4" />
-            <span>Delete for everyone</span>
-          </DropdownMenuItem>
-        )}
+        <Separator className="my-1" />
+
+        <DropdownMenuItem>
+          <Forward className="mr-2 h-4 w-4" />
+          <span>Forward</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Star className="mr-2 h-4 w-4" />
+          <span>Star</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Pin className="mr-2 h-4 w-4" />
+          <span>Pin</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDeleteForMe}>
+          <Trash2 className="mr-2 h-4 w-4" />
+          <span>Delete</span>
+        </DropdownMenuItem>
+        <Separator className="my-1" />
+
+        <DropdownMenuItem>
+          <SquareCheck className="mr-2 h-4 w-4" />
+          <span>Select</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <Share className="mr-2 h-4 w-4" />
+          <span>Share</span>
+        </DropdownMenuItem>
+        <Separator className="my-1" />
+
+        <DropdownMenuItem>
+          <Info className="mr-2 h-4 w-4" />
+          <span>Info</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
-};
-
-export default MessageContextMenu;
+}
