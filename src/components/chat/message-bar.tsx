@@ -17,7 +17,7 @@ interface MessageBarProps {
 const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
   const [typedMessage, setTypedMessage] = React.useState("");
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
-  const [showAudioRec, setShowAudioRec] = React.useState(false); // Renamed for clarity
+  const [showAudioRec, setShowAudioRec] = React.useState(false);
 
   const emojiPickerRef = React.useRef<HTMLDivElement>(null);
 
@@ -69,10 +69,10 @@ const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
 
   return (
     <div className="flex items-center p-3 h-[10%] relative border-t border-gray-200 gap-2">
-      {showAudioRec ? ( // Use the renamed state variable
-        <AudioRecorder 
-          showAudioRecorderHandler={setShowAudioRec} 
-          startRecordingOnMount={true} // Pass the new prop here
+      {showAudioRec ? (
+        <AudioRecorder
+          showAudioRecorderHandler={setShowAudioRec}
+          startRecordingOnMount={true}
         />
       ) : (
         <Fragment>
@@ -100,7 +100,7 @@ const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
               <SendHorizonal />
             </Button>
           ) : (
-            <Button variant="ghost" onClick={() => setShowAudioRec(true)}> {/* Use the renamed state setter */}
+            <Button variant="ghost" onClick={() => setShowAudioRec(true)}>
               <Mic />
             </Button>
           )}

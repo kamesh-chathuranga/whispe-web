@@ -9,12 +9,14 @@ import Notification from "../custom/notification";
 import API from "@/lib/axios";
 import { AxiosError } from "axios";
 import Chat from "./chat";
-import SearchBar from "./search-bar";
 
-const ChatList = () => {
+interface ChatListProps {
+  searchQuery: string;
+}
+
+const ChatList = ({ searchQuery }: ChatListProps) => {
   const { currentUser, chatList, setChatList } = useStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -69,24 +71,19 @@ const ChatList = () => {
   const content = isLoading ? (
     <p>Loading...</p>
   ) : (
-    <div className="space-y-1">
-      <div className="mb-3">
-        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
-      </div>
-      <div>
-        {filteredChatList.length > 0 ? (
-          filteredChatList.map((chat) => (
-            <Chat
-              _id={chat._id}
-              key={chat._id}
-              partner={chat.partner}
-              lastMessage={chat.lastMessage}
-            />
-          ))
-        ) : (
-          <p className="text-center text-gray-500 py-4">No chats found</p>
-        )}
-      </div>
+    <div>
+      {filteredChatList.length > 0 ? (
+        filteredChatList.map((chat) => (
+          <Chat
+            _id={chat._id}
+            key={chat._id}
+            partner={chat.partner}
+            lastMessage={chat.lastMessage}
+          />
+        ))
+      ) : (
+        <p className="text-center text-gray-500 py-4">No chats found</p>
+      )}
     </div>
   );
 

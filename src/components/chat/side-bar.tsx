@@ -40,12 +40,12 @@ const sideBarData = [
   {
     id: 2,
     icon: <PhoneIcon />,
-    path: "/dashboard/calls",
+    path: "/calls",
   },
   {
     id: 3,
     icon: <UserPlusIcon />,
-    path: "/dashboard/friends",
+    path: "/friends",
   },
 ];
 
@@ -132,7 +132,7 @@ const SideBar = () => {
     });
 
     socket.on("friendRequest:received", (request) => {
-      const shouldNotified = pathName !== "/dashboard/friends";
+      const shouldNotified = pathName !== "/friends";
       const newRequest: ReceivedFriendRequest = {
         id: request._id,
         senderName: request.sender.name,
@@ -145,7 +145,7 @@ const SideBar = () => {
         (t) => (
           <Notification
             t={t}
-            url="/dashboard/friends"
+            url="/friends"
             senderName={newRequest.senderName}
             image={newRequest.senderImageUrl}
             message="Sent a friend request"
@@ -284,7 +284,7 @@ const SideBar = () => {
         incomingCall={incomingCallDetails}
         currentUserId={currentUser?.id}
       />
-      <div className="flex flex-col h-full items-center justify-between w-12 bg-gray-50 border-r-2 px-1 py-1.5">
+      <div className="flex flex-col h-full items-center justify-between w-12 bg-gray-100/50 border-r-2 px-1 py-1.5">
         <div>
           <Button variant="ghost" size="icon" className="mb-3.5">
             <MenuIcon />
