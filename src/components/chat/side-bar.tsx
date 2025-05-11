@@ -63,7 +63,7 @@ const NavigationButton = ({ icon, path }: NavigationButtonProps) => {
       key={path}
       variant="ghost"
       size="icon"
-      className={`${pathname.includes(path) && "bg-gray-200"} relative mb-1`}
+      className={`${pathname.includes(path) && "bg-accent"} relative mb-1`}
       onClick={() => router.push(path)}
     >
       {/* <div className="bg-blue-500 absolute -top-1 right-0 text-xs rounded-full px-[5px] py-[1px] text-white">
@@ -284,7 +284,7 @@ const SideBar = () => {
         incomingCall={incomingCallDetails}
         currentUserId={currentUser?.id}
       />
-      <div className="flex flex-col h-full items-center justify-between w-12 bg-gray-100/90 border-r-2 px-1 py-1.5">
+      <div className="flex flex-col h-full items-center justify-between w-12 bg-gray-50 border-r-2 px-1 py-1.5">
         <div>
           <Button variant="ghost" size="icon" className="mb-3.5">
             <MenuIcon />

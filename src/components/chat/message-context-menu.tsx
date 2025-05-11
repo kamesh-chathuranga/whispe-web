@@ -29,8 +29,8 @@ interface MessageContextMenuProps {
   position: { x: number; y: number };
 }
 
-const MENU_WIDTH = 192; // 12rem
-const MENU_HEIGHT = 160; // approximate height
+const MENU_WIDTH = 192;
+const MENU_HEIGHT = 325;
 
 export default function MessageContextMenu({
   open,
@@ -45,28 +45,21 @@ export default function MessageContextMenu({
     if (!open) return;
 
     const viewportWidth = window.innerWidth;
-    // const viewportHeight = window.innerHeight;
-
-    // Horizontal: clamp so it never overflows right
     const x =
       position.x + MENU_WIDTH > viewportWidth
         ? Math.max(0, position.x - MENU_WIDTH)
         : position.x;
 
-    // Vertical: always open *above* the click point
     let y = position.y - MENU_HEIGHT;
-    // Clamp to top of viewport
     if (y < 0) y = 0;
 
     setAdjustedPosition({ x, y });
   }, [open, position]);
 
-  const handleDeleteForMe = useCallback(() => {
-    if (message._id) {
-      socket.emit("message:deleteForMe", { messageId: message._id });
-      onOpenChange(false);
-    }
-  }, [message._id, onOpenChange]);
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(message.content);
+    onOpenChange(false);
+  }, [message.content, onOpenChange]);
 
   // const handleDeleteForEveryone = useCallback(() => {
   //   if (message._id && isOwn) {
@@ -75,10 +68,12 @@ export default function MessageContextMenu({
   //   }
   // }, [message._id, isOwn, onOpenChange]);
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(message.content);
-    onOpenChange(false);
-  }, [message.content, onOpenChange]);
+  const handleDeleteForMe = useCallback(() => {
+    if (message._id) {
+      socket.emit("message:deleteForMe", { messageId: message._id });
+      onOpenChange(false);
+    }
+  }, [message._id, onOpenChange]);
 
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>

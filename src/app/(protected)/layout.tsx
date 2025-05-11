@@ -6,7 +6,6 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import ChatTopBar from "@/components/chat/chat-top-bar";
-import SearchBar from "@/components/chat/search-bar";
 import ChatList from "@/components/chat/chat-list";
 import SyncUserStore from "@/components/custom/sync-user-store";
 
@@ -23,10 +22,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <ResizablePanelGroup direction="horizontal" className="h-full ">
         <ResizablePanel defaultSize={25} minSize={20} maxSize={50}>
           <div className="flex flex-col h-full px-4 pt-2 gap-y-4">
-            <div className="flex flex-col gap-y-3">
-              <ChatTopBar />
-              <SearchBar />
-            </div>
+            <ChatTopBar />
             <ChatList />
           </div>
         </ResizablePanel>

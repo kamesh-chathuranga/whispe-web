@@ -1,11 +1,14 @@
-import { useCallback } from "react";
+import { useEffect, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { RefreshCw, Search, Settings, UserPlus } from "lucide-react";
+import { SquareArrowOutUpRight, SquareCheck, X } from "lucide-react";
+
+const MENU_WIDTH = 192;
+const MENU_HEIGHT = 50;
 
 interface ChatContextMenuProps {
   open: boolean;
@@ -18,25 +21,22 @@ const ChatContextMenu = ({
   onOpenChange,
   position,
 }: ChatContextMenuProps) => {
-  const handleRefresh = useCallback(() => {
-    // Implement refresh logic here
-    onOpenChange(false);
-  }, [onOpenChange]);
+  const [adjustedPosition, setAdjustedPosition] = useState(position);
 
-  const handleSearch = useCallback(() => {
-    // Implement search in chat logic
-    onOpenChange(false);
-  }, [onOpenChange]);
+  useEffect(() => {
+    if (!open) return;
 
-  const handleAddParticipant = useCallback(() => {
-    // Implement add participant logic
-    onOpenChange(false);
-  }, [onOpenChange]);
+    const viewportWidth = window.innerWidth;
+    const x =
+      position.x + MENU_WIDTH > viewportWidth
+        ? Math.max(0, position.x - MENU_WIDTH)
+        : position.x;
 
-  const handleSettings = useCallback(() => {
-    // Implement chat settings logic
-    onOpenChange(false);
-  }, [onOpenChange]);
+    let y = position.y - MENU_HEIGHT;
+    if (y < 0) y = 0;
+
+    setAdjustedPosition({ x, y });
+  }, [open, position]);
 
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
@@ -44,28 +44,24 @@ const ChatContextMenu = ({
       <DropdownMenuContent
         style={{
           position: "fixed",
-          top: position.y,
-          left: position.x,
+          top: adjustedPosition.y,
+          left: adjustedPosition.x,
           zIndex: 50,
         }}
         className="w-48"
         onContextMenu={(e) => e.preventDefault()}
       >
-        <DropdownMenuItem onClick={handleSearch}>
-          <Search className="mr-2 h-4 w-4" />
-          <span>Search in chat</span>
+        <DropdownMenuItem>
+          <SquareCheck className="mr-2 h-4 w-4" />
+          <span>Select messages</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleRefresh}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          <span>Refresh</span>
+        <DropdownMenuItem>
+          <SquareArrowOutUpRight className="mr-2 h-4 w-4" />
+          <span>Pop-out chat</span>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleAddParticipant}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          <span>Add participant</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleSettings}>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Chat settings</span>
+        <DropdownMenuItem>
+          <X className="mr-2 h-4 w-4" />
+          <span>Close chat</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

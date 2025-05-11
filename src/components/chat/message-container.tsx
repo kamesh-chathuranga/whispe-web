@@ -36,7 +36,7 @@ const MessageContainer = forwardRef<HTMLDivElement, MessageContainerProps>(
         ref={ref}
         onScroll={onScroll}
         onContextMenu={handleContainerContextMenu}
-        className="relative w-full h-[80vh] flex flex-col overflow-y-auto px-4 py-1 bg-[url('/chat-background.png')] bg-cover bg-no-repeat bg-center"
+        className="relative w-full h-full flex flex-col overflow-y-auto px-4 py-1 bg-[url('/chat-background.png')] bg-cover bg-no-repeat bg-center"
       >
         {loadingHistory && <p>Loading...</p>}
 

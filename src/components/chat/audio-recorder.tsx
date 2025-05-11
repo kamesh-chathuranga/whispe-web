@@ -9,165 +9,184 @@ import React, {
 import { Button } from "@/components/ui/button";
 import { Trash2, Mic, Play, Pause, SendHorizonal } from "lucide-react";
 import WaveSurfer from "wavesurfer.js";
+import RecordPlugin from "wavesurfer.js/dist/plugins/record.esm.js";
 import { useStore } from "@/store";
 import axios from "axios";
 import socket from "@/lib/socket";
+import { cn } from "@/lib/utils";
 
 interface AudioRecorderProps {
   showAudioRecorderHandler: React.Dispatch<React.SetStateAction<boolean>>;
+  startRecordingOnMount?: boolean;
 }
 
-const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
+const AudioRecorder = ({
+  showAudioRecorderHandler,
+  startRecordingOnMount,
+}: AudioRecorderProps) => {
   const { currentUser, currentChat } = useStore();
 
   const [isRecording, setIsRecording] = useState(false);
-  const [recordedAudio, setRecordedAudio] = useState<HTMLAudioElement | null>(
-    null
-  );
   const [waveForm, setWaveForm] = useState<WaveSurfer | null>(null);
+  const [recordPlugin, setRecordPlugin] = useState<RecordPlugin | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [renderedAudio, setRenderedAudio] = useState<File | null>(null);
+  const [hasAutoStarted, setHasAutoStarted] = useState(false); // New state variable
 
-  const audioRef = useRef(null);
-  const mediaRecorderRef = useRef<MediaRecorder>(null);
   const waveFormRef = useRef<HTMLDivElement>(null);
 
-  const recordingStartHandler = useCallback(() => {
-    setRecordingDuration(0);
-    setCurrentPlaybackTime(0);
-    setTotalDuration(0);
-    setIsRecording(true);
+  const recordingStartHandler = useCallback(
+    async (pluginParam?: RecordPlugin, wfParam?: WaveSurfer) => {
+      const currentRecordPlugin = pluginParam || recordPlugin;
+      const currentWaveForm = wfParam || waveForm;
 
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then((stream) => {
-        const mediaRecorder = new MediaRecorder(stream);
-        mediaRecorderRef.current = mediaRecorder;
-        if (audioRef.current) {
-          (audioRef.current as HTMLAudioElement).srcObject = stream;
-        }
+      if (!currentRecordPlugin || !currentWaveForm || isRecording) {
+        return;
+      }
 
-        const audioChunks: BlobPart[] = [];
-        mediaRecorder.ondataavailable = (e) => {
-          audioChunks.push(e.data);
-        };
-        mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(audioChunks, {
-            type: "audio/ogg; codecs=opus",
-          });
-          const audioUrl = URL.createObjectURL(audioBlob);
-          const audio = new Audio(audioUrl);
-          setRecordedAudio(audio);
+      setRenderedAudio(null);
+      setRecordingDuration(0);
+      setCurrentPlaybackTime(0);
+      setTotalDuration(0);
+      setIsPlaying(false);
 
-          waveForm?.load(audioUrl);
-        };
+      currentWaveForm.empty();
 
-        mediaRecorder.start();
-      })
-      .catch((err) => {
-        console.error("Error with microphone", err);
-      });
-  }, [waveForm]);
+      try {
+        setIsRecording(true);
+        await currentRecordPlugin.startRecording();
+      } catch (err) {
+        console.error("Error starting recording:", err);
+        setIsRecording(false);
+      }
+    },
+    [recordPlugin, waveForm, isRecording]
+  );
 
-  const recordingPauseHandler = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+  const recordingStopHandler = useCallback(() => {
+    if (recordPlugin && isRecording) {
+      recordPlugin.stopRecording();
       setIsRecording(false);
-      waveForm?.stop();
-
-      const audioChunks: BlobPart[] = [];
-
-      mediaRecorderRef.current.addEventListener("dataavailable", (e) => {
-        audioChunks.push(e.data);
-      });
-
-      mediaRecorderRef.current.addEventListener("stop", () => {
-        const audioBlob = new Blob(audioChunks, { type: "audio/mp3" });
-        const audioFile = new File([audioBlob], "recording.mp3");
-        setRenderedAudio(audioFile);
-      });
     }
-  };
+  }, [recordPlugin, isRecording]);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (isRecording) {
-      interval = setInterval(() => {
-        setRecordingDuration((prev) => {
-          setTotalDuration(prev + 1);
-          return prev + 1;
-        });
-      }, 1000);
+  const recordingResumeHandler = useCallback(() => {
+    if (recordPlugin && !isRecording) {
+      recordPlugin.resumeRecording();
+      setIsRecording(true);
     }
+  }, [recordPlugin, isRecording]);
 
-    return () => {
-      clearInterval(interval);
-    };
-  }, [isRecording]);
-
+  // Effect for initializing WaveSurfer and RecordPlugin
   useEffect(() => {
-    const wavesurfer = WaveSurfer.create({
-      container: waveFormRef.current as HTMLElement,
+    if (!waveFormRef.current) return;
+
+    const wsInstance = WaveSurfer.create({
+      container: waveFormRef.current,
       waveColor: "#ccc",
       progressColor: "#4a9eff",
       cursorColor: "#000",
       barWidth: 2,
       height: 30,
     });
+    setWaveForm(wsInstance);
 
-    setWaveForm(wavesurfer);
+    const recInstance = wsInstance.registerPlugin(
+      RecordPlugin.create({
+        scrollingWaveform: true,
+        renderRecordedAudio: false,
+      })
+    );
+    setRecordPlugin(recInstance);
 
-    wavesurfer.on("finish", () => {
+    recInstance.on("record-end", (blob: Blob) => {
+      const audioUrl = URL.createObjectURL(blob);
+      const audioFile = new File([blob], "recording.ogg", { type: blob.type });
+      setRenderedAudio(audioFile);
+      if (wsInstance) {
+        wsInstance.load(audioUrl);
+      }
+    });
+
+    wsInstance.on("play", () => setIsPlaying(true));
+    wsInstance.on("pause", () => setIsPlaying(false));
+    wsInstance.on("finish", () => {
       setIsPlaying(false);
+      wsInstance.seekTo(0);
+    });
+    wsInstance.on("timeupdate", (currentTime) =>
+      setCurrentPlaybackTime(currentTime)
+    );
+    wsInstance.on("decode", (duration) => {
+      setTotalDuration(duration);
+      setCurrentPlaybackTime(0);
     });
 
     return () => {
-      wavesurfer.destroy();
+      recInstance.destroy();
+      wsInstance.destroy();
+      setRecordPlugin(null);
+      setWaveForm(null);
     };
   }, []);
 
+  // Effect for handling startRecordingOnMount
   useEffect(() => {
-    if (waveForm) recordingStartHandler();
-  }, [waveForm, recordingStartHandler]);
-
-  useEffect(() => {
-    if (recordedAudio) {
-      const updatePlaybackTime = () => {
-        setCurrentPlaybackTime(recordedAudio.currentTime);
-      };
-
-      recordedAudio.addEventListener("timeupdate", updatePlaybackTime);
-
-      return () => {
-        recordedAudio.addEventListener("timeupdate", updatePlaybackTime);
-      };
+    if (
+      startRecordingOnMount &&
+      !hasAutoStarted && // Check if auto-start hasn't happened yet
+      recordPlugin &&
+      waveForm &&
+      !isRecording
+    ) {
+      recordingStartHandler(recordPlugin, waveForm);
+      setHasAutoStarted(true); // Mark that auto-start has occurred
     }
-  }, [recordedAudio]);
+  }, [
+    startRecordingOnMount,
+    hasAutoStarted, // Add to dependency array
+    recordPlugin,
+    waveForm,
+    isRecording,
+    recordingStartHandler,
+  ]);
+
+  // Effect for recording duration timer
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (!renderedAudio) setTotalDuration(recordingDuration);
+    }
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isRecording, recordingDuration, renderedAudio]);
 
   const audioPlayHandler = () => {
-    if (recordedAudio) {
-      waveForm?.stop();
-      waveForm?.play();
-      recordedAudio.play();
-      setIsPlaying(true);
+    if (waveForm && renderedAudio) {
+      waveForm.play();
     }
   };
 
   const audioPauseHandler = () => {
-    waveForm?.stop();
-    recordedAudio?.pause();
-    setIsPlaying(false);
+    if (waveForm) {
+      waveForm.pause();
+    }
   };
 
   const sendRecordedAudio = async () => {
+    if (!renderedAudio) return;
     try {
       const formData = new FormData();
-      formData.append("audio", renderedAudio as Blob);
-      const response = await axios.post("", {
+      formData.append("audio", renderedAudio);
+      const response = await axios.post("/api/upload-audio", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -177,12 +196,13 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
         },
       });
 
-      if (response.status == 200) {
+      if (response.status === 200 || response.status === 201) {
         socket.emit("send-message", {
           from: currentUser?.id,
           to: currentChat?._id,
           message: response.data,
         });
+        showAudioRecorderHandler(false);
       }
     } catch (error) {
       console.log("Error sending audio", error);
@@ -190,24 +210,31 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
   };
 
   const formatTime = (time: number) => {
-    if (isNaN(time)) return "0:00";
+    if (isNaN(time) || time === Infinity) return "0:00";
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
-
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div className="flex items-center justify-end text-2xl w-full ">
+    <div className="flex items-center justify-end text-2xl w-full gap-2">
       <Button
         variant="ghost"
-        onClick={() => showAudioRecorderHandler(false)}
+        onClick={() => {
+          if (isRecording) recordingStopHandler();
+          showAudioRecorderHandler(false);
+        }}
         size="icon"
       >
         <Trash2 />
       </Button>
 
-      <div className="flex items-center gap-x-3 py-1 px-3 text-base border rounded-full drop-shadow-lg">
+      <div
+        className={cn(
+          `flex items-center gap-x-3 px-2 text-[0.95rem]`,
+          renderedAudio && "border bg-accent rounded-full"
+        )}
+      >
         {isRecording ? (
           <div className="flex items-center gap-2">
             <div className="size-2 rounded-full bg-red-500 animate-pulse" />
@@ -215,15 +242,20 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
           </div>
         ) : (
           <div>
-            {recordedAudio && (
+            {renderedAudio && (
               <Fragment>
                 {!isPlaying ? (
-                  <Button variant="link" size="icon" onClick={audioPlayHandler}>
-                    <Play />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={audioPlayHandler}
+                    disabled={!renderedAudio}
+                  >
+                    <Play fill="black" />
                   </Button>
                 ) : (
                   <Button
-                    variant="link"
+                    variant="ghost"
                     size="icon"
                     onClick={audioPauseHandler}
                   >
@@ -234,38 +266,47 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
             )}
           </div>
         )}
-
-        <div ref={waveFormRef} hidden={isRecording} className="w-40" />
-
-        {recordedAudio && isPlaying && (
-          <span>{formatTime(currentPlaybackTime)}</span>
+        <div ref={waveFormRef} className="w-40 min-w-[10rem] h-[25px]" />
+        {!isRecording && renderedAudio && (
+          <div className="flex items-center size-10">
+            <span>
+              {isPlaying
+                ? formatTime(currentPlaybackTime)
+                : formatTime(totalDuration)}
+            </span>
+          </div>
         )}
-        {recordedAudio && !isPlaying && (
-          <span>{formatTime(totalDuration)}</span>
-        )}
-
-        <audio ref={audioRef} hidden />
+        {/* {isRecording && !renderedAudio && <span className="w-12"></span>} */}
       </div>
 
-      <div className="mr-4">
+      <div>
         {!isRecording ? (
-          <Button variant="ghost" size="icon" onClick={recordingStartHandler}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={recordingResumeHandler}
+            disabled={!recordPlugin}
+          >
             <Mic />
           </Button>
         ) : (
           <Button
-            variant="link"
+            variant="ghost"
             size="icon"
             className="text-red-500"
-            onClick={recordingPauseHandler}
+            onClick={recordingStopHandler}
           >
             <Pause />
           </Button>
         )}
       </div>
 
-      <Button className="bg-primary" size="icon" onClick={sendRecordedAudio}>
-        {" "}
+      <Button
+        className="bg-green-500 hover:bg-green-400"
+        size="icon"
+        onClick={sendRecordedAudio}
+        disabled={!renderedAudio || isRecording}
+      >
         <SendHorizonal />
       </Button>
     </div>

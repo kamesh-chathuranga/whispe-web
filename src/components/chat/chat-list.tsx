@@ -9,10 +9,12 @@ import Notification from "../custom/notification";
 import API from "@/lib/axios";
 import { AxiosError } from "axios";
 import Chat from "./chat";
+import SearchBar from "./search-bar";
 
 const ChatList = () => {
   const { currentUser, chatList, setChatList } = useStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -34,7 +36,6 @@ const ChatList = () => {
 
   useEffect(() => {
     if (!socket || !currentUser?.id) return;
-    // socket.emit("join", currentUser?.id);
 
     socket.on("friendRequest:accepted", (chat) => {
       const shouldNotified = chat.acceptBy !== currentUser.id;
@@ -60,18 +61,32 @@ const ChatList = () => {
     };
   }, [chatList, currentUser?.id, setChatList]);
 
+  const filteredChatList = chatList.filter((chat) => {
+    if (!searchQuery.trim()) return true;
+    return chat.partner.name.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
   const content = isLoading ? (
     <p>Loading...</p>
   ) : (
-    <div>
-      {chatList.map((chat) => (
-        <Chat
-          _id={chat._id}
-          key={chat._id}
-          partner={chat.partner}
-          lastMessage={chat.lastMessage}
-        />
-      ))}
+    <div className="space-y-1">
+      <div className="mb-3">
+        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      </div>
+      <div>
+        {filteredChatList.length > 0 ? (
+          filteredChatList.map((chat) => (
+            <Chat
+              _id={chat._id}
+              key={chat._id}
+              partner={chat.partner}
+              lastMessage={chat.lastMessage}
+            />
+          ))
+        ) : (
+          <p className="text-center text-gray-500 py-4">No chats found</p>
+        )}
+      </div>
     </div>
   );
 

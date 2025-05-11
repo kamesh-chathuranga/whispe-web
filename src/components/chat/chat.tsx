@@ -9,12 +9,15 @@ import { User } from "lucide-react";
 import Image from "next/image";
 import { useStore } from "@/store";
 import { formatLastMessageTime } from "@/lib/calculateTime";
+import MessageStatus from "./message-status";
 
 const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
   const pathName = usePathname();
-  const { setCurrentChat } = useStore();
+  const { setCurrentChat, currentUser } = useStore();
+
   const containerRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLSpanElement>(null);
+
   const [displayMessage, setDisplayMessage] = useState("");
 
   useEffect(() => {
@@ -28,9 +31,7 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
 
     const containerWidth = containerRef.current.getBoundingClientRect().width;
     const originalMessage = lastMessage
-      ? lastMessage.sender._id === partner._id
-        ? `From: ${lastMessage.content}`
-        : `You: ${lastMessage.content}`
+      ? lastMessage.content
       : "You are now connected";
 
     measureRef.current.style.width = "auto";
@@ -59,7 +60,7 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
     }
 
     setDisplayMessage(originalMessage.slice(0, optimalLength) + "...");
-  }, [lastMessage, partner._id]);
+  }, [lastMessage]);
 
   useEffect(() => {
     truncateMessage();
@@ -80,6 +81,8 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
       }
     };
   }, [truncateMessage]);
+
+  console.log(lastMessage);
 
   return (
     <Link
@@ -114,12 +117,17 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
                   : ""}
               </span>
             </div>
-            <p
-              className="mt-1 text-sm text-gray-500"
-              style={{ whiteSpace: "nowrap" }}
-            >
-              {displayMessage}
-            </p>
+            <div className="flex items-center gap-2">
+              {lastMessage && lastMessage?.sender._id === currentUser?.id && (
+                <MessageStatus status={lastMessage.status} />
+              )}
+              <p
+                className="mt-1 text-sm text-gray-500"
+                style={{ whiteSpace: "nowrap" }}
+              >
+                {displayMessage}
+              </p>
+            </div>
             <span
               ref={measureRef}
               style={{

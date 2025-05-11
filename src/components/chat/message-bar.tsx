@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { Fragment, useEffect } from "react";
 import { Button } from "../ui/button";
 import EmojiPicker from "emoji-picker-react";
 import { MouseDownEvent } from "emoji-picker-react/dist/config/config";
-import { Paperclip, SendHorizonal, Smile } from "lucide-react";
+import { Mic, SendHorizonal, Smile } from "lucide-react";
 import { Textarea } from "../ui/textarea";
+import AttachmentDropdown from "./attachment-dropdown";
+import AudioRecorder from "./audio-recorder";
 
 interface MessageBarProps {
   setMessage: (message: string) => void;
@@ -15,6 +17,8 @@ interface MessageBarProps {
 const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
   const [typedMessage, setTypedMessage] = React.useState("");
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
+  const [showAudioRec, setShowAudioRec] = React.useState(false); // Renamed for clarity
+
   const emojiPickerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -65,30 +69,43 @@ const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
 
   return (
     <div className="flex items-center p-3 h-[10%] relative border-t border-gray-200 gap-2">
-      <Button variant="ghost" onClick={toggleEmojiPicker} id="emoji-picker">
-        <Smile />
-      </Button>
+      {showAudioRec ? ( // Use the renamed state variable
+        <AudioRecorder 
+          showAudioRecorderHandler={setShowAudioRec} 
+          startRecordingOnMount={true} // Pass the new prop here
+        />
+      ) : (
+        <Fragment>
+          <Button variant="ghost" onClick={toggleEmojiPicker} id="emoji-picker">
+            <Smile />
+          </Button>
 
-      {isEmojiPickerOpen && (
-        <div className="absolute bottom-24 left-16" ref={emojiPickerRef}>
-          <EmojiPicker onEmojiClick={addEmoji} />
-        </div>
+          {isEmojiPickerOpen && (
+            <div className="absolute bottom-24 left-16" ref={emojiPickerRef}>
+              <EmojiPicker onEmojiClick={addEmoji} />
+            </div>
+          )}
+          <AttachmentDropdown />
+          <Textarea
+            className="focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[40px] max-h-[120px] py-2"
+            placeholder="Type a message"
+            onChange={(e) => handleKeyChange(e)}
+            onKeyDown={(e) => handleKeyDown(e)}
+            value={typedMessage}
+            autoFocus
+            rows={1}
+          />
+          {typedMessage ? (
+            <Button variant="ghost" onClick={sendMessage}>
+              <SendHorizonal />
+            </Button>
+          ) : (
+            <Button variant="ghost" onClick={() => setShowAudioRec(true)}> {/* Use the renamed state setter */}
+              <Mic />
+            </Button>
+          )}
+        </Fragment>
       )}
-      <Button variant="ghost">
-        <Paperclip />
-      </Button>
-      <Textarea
-        className="focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[40px] max-h-[120px] py-2"
-        placeholder="Type a message"
-        onChange={(e) => handleKeyChange(e)}
-        onKeyDown={(e) => handleKeyDown(e)}
-        value={typedMessage}
-        autoFocus
-        rows={1}
-      />
-      <Button variant="ghost" onClick={sendMessage}>
-        <SendHorizonal />
-      </Button>
     </div>
   );
 };
