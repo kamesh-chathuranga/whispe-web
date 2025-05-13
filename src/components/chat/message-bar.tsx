@@ -8,16 +8,15 @@ import { Textarea } from "../ui/textarea";
 import AudioRecorder from "./audio-recorder";
 import AttachmentWrapper from "./attachment-wrapper";
 import EmojiPicker from "../custom/emoji-picker";
+import useMessageSend from "@/hooks/use-message-send";
 
 interface MessageBarProps {
-  onMessageSend: (message: string) => void;
   onTypingStatusChange: () => void;
 }
 
-const MessageBar = ({
-  onMessageSend,
-  onTypingStatusChange,
-}: MessageBarProps) => {
+const MessageBar = ({ onTypingStatusChange }: MessageBarProps) => {
+  const { onMessageSend } = useMessageSend();
+
   const [message, setMessage] = React.useState("");
   const [showAudioRec, setShowAudioRec] = React.useState(false);
 
@@ -37,13 +36,9 @@ const MessageBar = ({
     }
   };
 
-  const sendMessage = async () => {
-    try {
-      onMessageSend(message);
-      setMessage("");
-    } catch (error) {
-      console.log(error);
-    }
+  const sendMessage = () => {
+    onMessageSend(message);
+    setMessage("");
   };
 
   return (

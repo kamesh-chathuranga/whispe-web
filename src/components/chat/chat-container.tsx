@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import ChatHeader from "./chat-header";
 import MessageContainer from "./message-container";
-import { usePathname } from "next/navigation";
 import { useStore } from "@/store";
 import MessageBar from "./message-bar";
 import socket from "@/lib/socket";
@@ -13,11 +11,7 @@ import { AxiosError } from "axios";
 import toast from "react-hot-toast";
 
 const ChatContainer = () => {
-  const pathname = usePathname();
-  const chatId = pathname?.split("/")[2] ?? null;
-
-  const { chatList, currentUser, messages, setMessages } = useStore();
-  const currentChat = chatList.find((c) => c._id === chatId);
+  const { currentChat, currentUser, messages, setMessages } = useStore();
 
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -32,14 +26,12 @@ const ChatContainer = () => {
   const markMessagesAsRead = useCallback(() => {
     if (!socket || !messages.length) return;
 
-    // Get unread messages that weren't sent by the current user
     const unreadMessages = messages.filter(
       (message) =>
         message.sender._id !== currentUser?.id &&
         (message.status === "sent" || message.status === "delivered")
     );
 
-    // Mark each as read
     unreadMessages.forEach((message) => {
       socket.emit("message:read", { messageId: message._id });
     });
@@ -48,9 +40,11 @@ const ChatContainer = () => {
   useEffect(() => {
     (async () => {
       try {
+        if (!currentChat) return;
+
         setIsLoading(true);
         const response = await API.post("/messages", {
-          chatId,
+          chatId: currentChat?._id,
           before: undefined,
           limit: 20,
         });
@@ -69,14 +63,14 @@ const ChatContainer = () => {
         setIsLoading(false);
       }
     })();
-  }, [chatId, setMessages]);
+  }, [currentChat, setMessages]);
 
   // Second effect just for marking messages as read
   useEffect(() => {
-    if (chatId && messages.length > 0) {
+    if (currentChat && messages.length > 0) {
       markMessagesAsRead();
     }
-  }, [chatId, messages, markMessagesAsRead]);
+  }, [messages, markMessagesAsRead, currentChat]);
 
   useEffect(() => {
     socket.on("typing", () => {
@@ -147,7 +141,7 @@ const ChatContainer = () => {
   }, [loadingHistory, messages]);
 
   const loadPreviousMessages = useCallback(async () => {
-    if (!chatId || loadingHistory || !hasMore) return;
+    if (!currentChat || loadingHistory || !hasMore) return;
 
     try {
       setLoadingHistory(true);
@@ -156,7 +150,7 @@ const ChatContainer = () => {
         messages.length > 0 ? messages[0].createdAt : undefined;
 
       const response = await API.post("/messages", {
-        chatId,
+        chatId: currentChat._id,
         before: oldestMessageId,
         limit: 20,
       });
@@ -183,7 +177,7 @@ const ChatContainer = () => {
     } finally {
       setLoadingHistory(false);
     }
-  }, [chatId, loadingHistory, hasMore, messages, setMessages]);
+  }, [currentChat, loadingHistory, hasMore, messages, setMessages]);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -204,6 +198,7 @@ const ChatContainer = () => {
   }, [loadingHistory, hasMore, loadPreviousMessages]);
 
   const handleTypingStatus = useCallback(() => {
+    const chatId = currentChat?._id;
     socket.emit("typing", chatId);
 
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -211,29 +206,10 @@ const ChatContainer = () => {
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit("typing:stop", chatId);
     }, 1000);
-  }, [chatId]);
-
-  const handleMessageSend = useCallback(
-    (message: string) => {
-      if (!chatId) return;
-
-      socket.emit(
-        "message:send",
-        { chatId, content: message, attachments: [] },
-        (res: any) => {
-          if (res.status !== 201) console.log(res.error);
-        }
-      );
-    },
-    [chatId]
-  );
-
-  if (!chatId) {
-    return <div className="p-4">No chat selected.</div>;
-  }
+  }, [currentChat?._id]);
 
   if (!currentChat || !currentUser) {
-    return <div className="p-4">Loading chat...</div>;
+    return <div className="p-4">No chat selected.</div>;
   }
 
   return (
@@ -247,10 +223,7 @@ const ChatContainer = () => {
         currentUserId={currentUser.id}
         loadingHistory={loadingHistory || isLoading}
       />
-      <MessageBar
-        onMessageSend={handleMessageSend}
-        onTypingStatusChange={handleTypingStatus}
-      />
+      <MessageBar onTypingStatusChange={handleTypingStatus} />
     </div>
   );
 };

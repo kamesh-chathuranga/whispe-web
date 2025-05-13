@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { CallType } from "@/hooks/use-media-call";
 import Peer from "simple-peer";
 
@@ -37,11 +35,20 @@ export interface SingleChat {
   lastMessage?: Message;
 }
 
+export interface Attachment {
+  url: string;
+  type: "image" | "audio" | "video" | "file";
+  filename: string;
+  size: number;
+  mimeType: string;
+  duration?: number;
+}
+
 export interface Message {
   _id: string;
   sender: Person;
   content: string;
-  attachments?: any[];
+  attachments?: Attachment[];
   createdAt: string;
   chat: string;
   status: "sent" | "delivered" | "read";

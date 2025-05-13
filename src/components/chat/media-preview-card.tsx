@@ -4,22 +4,33 @@ import React, { useCallback, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import EmojiPicker from "../custom/emoji-picker";
+import useMessageSend from "@/hooks/use-message-send";
+import mediaUploader from "@/lib/mediaUploader";
 
 interface MediaPreviewCardProps {
+  caption?: string;
+  setCaption: React.Dispatch<React.SetStateAction<string>>;
   mediaFiles: File[];
   setMediaFiles: React.Dispatch<React.SetStateAction<File[]>>;
-  caption?: string;
-  setCaption: (message: string) => void;
 }
 
 const MediaPreviewCard = ({
+  caption,
+  setCaption,
   mediaFiles,
   setMediaFiles,
-  caption: message,
-  setCaption,
 }: MediaPreviewCardProps) => {
+  const { onMessageSend } = useMessageSend();
+
   const [previewIndex, setPreviewIndex] = useState(0);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
+
+  const sendMessageWithAttachments = useCallback(async () => {
+    const attachments = await mediaUploader(mediaFiles);
+    onMessageSend(caption || "", attachments);
+    setMediaFiles([]);
+    setCaption("");
+  }, [caption, mediaFiles, onMessageSend, setCaption, setMediaFiles]);
 
   const handleMediaFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,7 +74,7 @@ const MediaPreviewCard = ({
         multiple
       />
 
-      <div className="bg-gray-200/70 p-1 flex justify-between items-center">
+      <div className="bg-gray-200/50 p-1 flex justify-between items-center">
         <Button variant="ghost" onClick={() => removeFile(previewIndex)}>
           <Trash2 />
         </Button>
@@ -96,14 +107,14 @@ const MediaPreviewCard = ({
           className="focus-visible:ring-0 focus-visible:ring-offset-0 resize-none py-5 min-h-9 bg-gray-200/90 rounded-none"
           placeholder="Caption (optional)"
           onChange={(e) => setCaption(e.target.value)}
-          value={message}
+          value={caption}
           autoFocus
           rows={1}
         />
       </div>
 
       {/* Thumbnail selector */}
-      <div className="flex space-x-2 p-2 bg-gray-200/70 justify-between items-center">
+      <div className="flex space-x-2 p-2 bg-gray-200/50 justify-between items-center">
         <Button
           className="size-11 bg-white/90 border hover:bg-white/80"
           onClick={openMediaFileSelector}
@@ -116,10 +127,10 @@ const MediaPreviewCard = ({
             {mediaFiles.map((file, idx) => (
               <button
                 key={idx}
-                className={`relative border rounded hover:opacity-100 transition-opacity ${
+                className={`relative rounded hover:opacity-100 border-b-[3px] transition-opacity ${
                   idx === previewIndex
-                    ? "border-green-500 border-b-[3px] opacity-100"
-                    : "opacity-50"
+                    ? "border-green-500 opacity-100"
+                    : "opacity-50 border-b-transparent"
                 }`}
                 onClick={() => setPreviewIndex(idx)}
               >
@@ -130,17 +141,17 @@ const MediaPreviewCard = ({
                     className="size-12 object-cover"
                   />
                 ) : (
-                  <video
-                    src={URL.createObjectURL(file)}
-                    className="h-16 w-16"
-                  />
+                  <video src={URL.createObjectURL(file)} className="size-12" />
                 )}
               </button>
             ))}
           </div>
         )}
 
-        <Button className="bg-green-600 hover:bg-green-500 size-11 relative">
+        <Button
+          className="bg-green-600 hover:bg-green-500 size-11 relative"
+          onClick={sendMessageWithAttachments}
+        >
           <SendHorizonal />
           <span className="absolute -bottom-1 -right-1 text-xs bg-white text-black rounded-full px-1">
             {mediaFiles.length}

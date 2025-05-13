@@ -4,7 +4,7 @@ import MediaPreviewCard from "./media-preview-card";
 
 interface AttachmentWrapperProps {
   message?: string;
-  setMessage: (message: string) => void;
+  setMessage: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const AttachmentWrapper = ({ message, setMessage }: AttachmentWrapperProps) => {
@@ -16,9 +16,9 @@ const AttachmentWrapper = ({ message, setMessage }: AttachmentWrapperProps) => {
       {mediaFiles.length > 0 && (
         <MediaPreviewCard
           caption={message}
+          setCaption={setMessage}
           mediaFiles={mediaFiles}
           setMediaFiles={setMediaFiles}
-          setCaption={setMessage}
         />
       )}
     </>
