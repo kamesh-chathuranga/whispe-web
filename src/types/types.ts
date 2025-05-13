@@ -66,3 +66,14 @@ export interface FriendStatus {
   isOnline: boolean;
   lastSeen?: string;
 }
+
+export interface MediaUploadRequest {
+  filename: string;
+  contentType: string;
+}
+
+export interface MediaUploadResponse {
+  filename: string;
+  url: string;
+  key: string;
+}

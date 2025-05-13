@@ -1,58 +1,37 @@
 "use client";
 
-import React, { Fragment, useEffect } from "react";
+import React from "react";
 import { Button } from "../ui/button";
-import EmojiPicker from "emoji-picker-react";
 import { MouseDownEvent } from "emoji-picker-react/dist/config/config";
-import { Mic, SendHorizonal, Smile } from "lucide-react";
+import { Mic, SendHorizonal } from "lucide-react";
 import { Textarea } from "../ui/textarea";
-import AttachmentDropdown from "./attachment-dropdown";
 import AudioRecorder from "./audio-recorder";
+import AttachmentWrapper from "./attachment-wrapper";
+import EmojiPicker from "../custom/emoji-picker";
 
 interface MessageBarProps {
-  setMessage: (message: string) => void;
+  onMessageSend: (message: string) => void;
   onTypingStatusChange: () => void;
 }
 
-const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
-  const [typedMessage, setTypedMessage] = React.useState("");
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = React.useState(false);
+const MessageBar = ({
+  onMessageSend,
+  onTypingStatusChange,
+}: MessageBarProps) => {
+  const [message, setMessage] = React.useState("");
   const [showAudioRec, setShowAudioRec] = React.useState(false);
 
-  const emojiPickerRef = React.useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const emojiPickerCloseHandler = (e: MouseEvent) => {
-      if (
-        (e.target as HTMLElement).id !== "emoji-picker" &&
-        emojiPickerRef.current &&
-        !emojiPickerRef.current.contains(e.target as Node)
-      ) {
-        setIsEmojiPickerOpen(false);
-      }
-    };
-
-    document.addEventListener("click", emojiPickerCloseHandler);
-    return () => {
-      document.removeEventListener("click", emojiPickerCloseHandler);
-    };
-  }, []);
-
-  const toggleEmojiPicker = () => {
-    setIsEmojiPickerOpen((prev) => !prev);
-  };
-
   const addEmoji: MouseDownEvent = (emojiData) => {
-    setTypedMessage((prev) => prev + emojiData.emoji);
+    setMessage((prev) => prev + emojiData.emoji);
   };
 
   const handleKeyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setTypedMessage(e.target.value);
+    setMessage(e.target.value);
     onTypingStatusChange();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey && typedMessage.trim()) {
+    if (e.key === "Enter" && !e.shiftKey && message.trim()) {
       e.preventDefault();
       sendMessage();
     }
@@ -60,42 +39,36 @@ const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
 
   const sendMessage = async () => {
     try {
-      setMessage(typedMessage);
-      setTypedMessage("");
+      onMessageSend(message);
+      setMessage("");
     } catch (error) {
       console.log(error);
     }
   };
 
   return (
-    <div className="flex items-center p-3 h-[10%] relative border-t border-gray-200 gap-2">
+    <div className="flex items-center p-3 h-[10%] relative border-t border-gray-200 gap-1">
       {showAudioRec ? (
         <AudioRecorder
           showAudioRecorderHandler={setShowAudioRec}
           startRecordingOnMount={true}
         />
       ) : (
-        <Fragment>
-          <Button variant="ghost" onClick={toggleEmojiPicker} id="emoji-picker">
-            <Smile />
-          </Button>
+        <>
+          <EmojiPicker onEmojiClick={addEmoji} />
+          <AttachmentWrapper message={message} setMessage={setMessage} />
 
-          {isEmojiPickerOpen && (
-            <div className="absolute bottom-24 left-16" ref={emojiPickerRef}>
-              <EmojiPicker onEmojiClick={addEmoji} />
-            </div>
-          )}
-          <AttachmentDropdown />
           <Textarea
             className="focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[40px] max-h-[120px] py-2"
             placeholder="Type a message"
             onChange={(e) => handleKeyChange(e)}
             onKeyDown={(e) => handleKeyDown(e)}
-            value={typedMessage}
+            value={message}
             autoFocus
             rows={1}
           />
-          {typedMessage ? (
+
+          {message ? (
             <Button variant="ghost" onClick={sendMessage}>
               <SendHorizonal />
             </Button>
@@ -104,7 +77,7 @@ const MessageBar = ({ setMessage, onTypingStatusChange }: MessageBarProps) => {
               <Mic />
             </Button>
           )}
-        </Fragment>
+        </>
       )}
     </div>
   );

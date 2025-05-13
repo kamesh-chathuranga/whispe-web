@@ -213,7 +213,7 @@ const ChatContainer = () => {
     }, 1000);
   }, [chatId]);
 
-  const sendMessage = useCallback(
+  const handleMessageSend = useCallback(
     (message: string) => {
       if (!chatId) return;
 
@@ -248,7 +248,7 @@ const ChatContainer = () => {
         loadingHistory={loadingHistory || isLoading}
       />
       <MessageBar
-        setMessage={sendMessage}
+        onMessageSend={handleMessageSend}
         onTypingStatusChange={handleTypingStatus}
       />
     </div>

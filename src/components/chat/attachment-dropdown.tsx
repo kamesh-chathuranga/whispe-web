@@ -8,38 +8,39 @@ import {
 import { Button } from "../ui/button";
 import { Camera, File, ImageIcon, Paperclip } from "lucide-react";
 
-const AttachmentDropdown = () => {
+interface AttachmentDropdownProps {
+  setMediaFiles: React.Dispatch<React.SetStateAction<File[]>>;
+}
+
+const AttachmentDropdown = ({ setMediaFiles }: AttachmentDropdownProps) => {
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
   const documentFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleMediaFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files.length > 0) {
-        console.log("Selected files:", e.target.files);
+        const filesArray = Array.from(e.target.files);
+        setMediaFiles(filesArray);
       }
     },
-    []
+    [setMediaFiles]
   );
 
   const handleDocumentFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files.length > 0) {
-        console.log("Selected files:", e.target.files);
+        console.log("Selected document:", e.target.files[0]);
       }
     },
     []
   );
 
   const openMediaFileSelector = useCallback(() => {
-    if (mediaFileInputRef.current) {
-      mediaFileInputRef.current.click();
-    }
+    mediaFileInputRef.current?.click();
   }, []);
 
   const openDocumentFileSelector = useCallback(() => {
-    if (documentFileInputRef.current) {
-      documentFileInputRef.current.click();
-    }
+    documentFileInputRef.current?.click();
   }, []);
 
   return (
@@ -50,6 +51,7 @@ const AttachmentDropdown = () => {
         style={{ display: "none" }}
         onChange={handleMediaFile}
         accept="image/*,video/*"
+        multiple
       />
       <input
         type="file"
@@ -58,6 +60,7 @@ const AttachmentDropdown = () => {
         onChange={handleDocumentFile}
       />
 
+      {/* Dropdown trigger */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost">
