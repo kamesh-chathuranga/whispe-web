@@ -22,7 +22,7 @@ const ChatList = ({ searchQuery }: ChatListProps) => {
     (async () => {
       try {
         setIsLoading(true);
-        const response = await API.get("/chat");
+        const response = await API.get("/chats");
         setChatList(response.data);
       } catch (error) {
         if (error instanceof AxiosError) {

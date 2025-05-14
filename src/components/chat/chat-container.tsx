@@ -23,6 +23,40 @@ const ChatContainer = () => {
   const prevScrollHeightRef = useRef(0);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  useEffect(() => {
+    if (!currentChat) return;
+
+    setMessages([]);
+    const controller = new AbortController();
+
+    (async () => {
+      try {
+        setIsLoading(true);
+
+        const response = await API.get(
+          `/chats/${currentChat._id}/messages?limit=${20}`,
+          { signal: controller.signal }
+        );
+        setMessages(response.data);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+
+        if (error instanceof AxiosError) {
+          toast.error(error.response?.data.message, { position: "top-center" });
+        } else {
+          toast.error(
+            "An error occurred while fetching messages. Please try again.",
+            { position: "top-center" }
+          );
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+
+    return () => controller.abort();
+  }, [currentChat, setMessages]);
+
   const markMessagesAsRead = useCallback(() => {
     if (!socket || !messages.length) return;
 
@@ -36,34 +70,6 @@ const ChatContainer = () => {
       socket.emit("message:read", { messageId: message._id });
     });
   }, [messages, currentUser]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        if (!currentChat) return;
-
-        setIsLoading(true);
-        const response = await API.post("/messages", {
-          chatId: currentChat?._id,
-          before: undefined,
-          limit: 20,
-        });
-
-        setMessages(response.data);
-      } catch (error) {
-        if (error instanceof AxiosError) {
-          toast.error(error.response?.data.message, { position: "top-center" });
-        } else {
-          toast.error(
-            "An error occurred while fetching messages. Please try again.",
-            { position: "top-center" }
-          );
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [currentChat, setMessages]);
 
   // Second effect just for marking messages as read
   useEffect(() => {
@@ -146,14 +152,16 @@ const ChatContainer = () => {
     try {
       setLoadingHistory(true);
 
-      const oldestMessageId =
+      const firstMessageTimestamp =
         messages.length > 0 ? messages[0].createdAt : undefined;
 
-      const response = await API.post("/messages", {
-        chatId: currentChat._id,
-        before: oldestMessageId,
-        limit: 20,
-      });
+      if (!firstMessageTimestamp) return;
+
+      const response = await API.get(
+        `/chats/${
+          currentChat._id
+        }/messages?limit=${20}&before=${firstMessageTimestamp}`
+      );
 
       if (response.data.length === 0) {
         setHasMore(false);

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { Fragment, useState } from "react";
 import {
   formatMessageTimestamp,
@@ -73,6 +74,31 @@ const MessageBubble = ({
           )}
         >
           <span className="break-all">{message.content}</span>
+
+          {/* Attachments Preview */}
+          {/* {Array.isArray(message.attachments) &&
+            message.attachments.length > 0 && (
+              <div className="flex flex-col gap-2 mt-2 w-full">
+                {message.attachments.map((file, idx) => (
+                  <div key={idx} className="w-full">
+                    {file.type === "image" ? (
+                      <img
+                        src={file.url}
+                        alt={`attachment-${idx}`}
+                        className="max-w-[200px] max-h-[200px] rounded"
+                      />
+                    ) : file.type === "video" ? (
+                      <video
+                        src={file.url}
+                        controls
+                        className="max-w-[200px] max-h-[200px] rounded"
+                      />
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )} */}
+
           <div className="flex gap-1 self-end items-center -mb-[6px] -mr-[2px] min-w-fit">
             <span className="pt-1 min-w-fit text-[9.5px] text-message-time">
               {formatMessageTimestamp(messageDate)}

@@ -29,7 +29,7 @@ const ProfileCardContainer = () => {
 
   const handleSendFriendRequest = async (receiverId: string) => {
     try {
-      const response = await API.post("/friend-request", { receiverId });
+      const response = await API.post("/friend-requests", { receiverId });
       toast.success(response.data.message);
     } catch (error) {
       if (error instanceof AxiosError) {

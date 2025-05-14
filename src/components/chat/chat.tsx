@@ -82,8 +82,6 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
     };
   }, [truncateMessage]);
 
-  console.log(lastMessage);
-
   return (
     <Link
       href={`/chat/${_id}`}

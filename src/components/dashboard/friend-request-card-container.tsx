@@ -18,7 +18,7 @@ const FriendRequestCardContainer = () => {
     (async () => {
       try {
         setIsLoading(true);
-        const response = await API.get("/friend-request/received");
+        const response = await API.get("/friend-requests/received");
         const requests: ReceivedFriendRequest[] = response.data.map(
           (request: any) => ({
             id: request._id,
@@ -37,7 +37,7 @@ const FriendRequestCardContainer = () => {
 
   const handleFriendRequestAccept = async (requestId: string) => {
     try {
-      const response = await API.post(`/friend-request/${requestId}/accept`);
+      const response = await API.post(`/friend-requests/${requestId}/accept`);
       const updatedRequests = friendRequests.filter(
         (request) => request.id !== requestId
       );
@@ -56,7 +56,7 @@ const FriendRequestCardContainer = () => {
 
   const handleFriendRequestDelete = async (requestId: string) => {
     try {
-      const response = await API.delete(`/friend-request/${requestId}/cancel`);
+      const response = await API.delete(`/friend-requests/${requestId}/cancel`);
       const updatedRequests = friendRequests.filter(
         (request) => request.id !== requestId
       );

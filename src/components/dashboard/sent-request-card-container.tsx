@@ -20,7 +20,7 @@ const SentRequestCardContainer = () => {
     (async () => {
       try {
         setIsLoading(true);
-        const response = await API.get("/friend-request/sent");
+        const response = await API.get("/friend-requests/sent");
         const requests: SentFriendRequest[] = response.data.map(
           (request: any) => ({
             id: request._id,
@@ -40,7 +40,7 @@ const SentRequestCardContainer = () => {
 
   const handleCancelFriendRequest = async (requestId: string) => {
     try {
-      const response = await API.delete(`/friend-request/${requestId}/cancel`);
+      const response = await API.delete(`/friend-requests/${requestId}/cancel`);
       setSentFriendRequests((prev) =>
         prev.filter((request) => request.id !== requestId)
       );
