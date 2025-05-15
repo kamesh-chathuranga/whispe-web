@@ -1,29 +1,30 @@
 import API from "@/lib/axios";
 import { Attachment, MediaUploadResponse } from "@/types/types";
 
-const mediaUploader = async (files: File[]): Promise<Attachment[]> => {
+const mediaUploader = async (
+  files: File[],
+  chatId: string
+): Promise<Attachment[]> => {
   try {
     const presignData = await API.post<MediaUploadResponse[]>(
-      "/messages/upload",
-      files.map((f) => ({ filename: f.name, contentType: f.type }))
+      `/chats/${chatId}/media/upload`,
+      files.map((f) => ({ filename: f.name, mimeType: f.type, size: f.size }))
     );
 
     await Promise.all(
-      presignData.data.map((p, idx) =>
-        API.put(p.url, files[idx], {
+      presignData.data.map((sign, idx) =>
+        API.put(sign.url, files[idx], {
           headers: { "Content-Type": files[idx].type },
         })
       )
     );
 
     return presignData.data.map((p) => ({
-      url: p.url.split("?")[0],
+      objectKey: p.objectKey,
       filename: p.filename,
-      size: files.find((f) => f.name === p.filename)!.size,
-      mimeType: files.find((f) => f.name === p.filename)!.type,
-      type: files
-        .find((f) => f.name === p.filename)!
-        .type.split("/")[0] as Attachment["type"],
+      size: p.size,
+      mimeType: p.mimeType,
+      type: p.type,
     }));
   } catch (error) {
     console.log("Error uploading media files:", error);

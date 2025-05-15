@@ -9,7 +9,7 @@ import { Button } from "../ui/button";
 import { Camera, File, ImageIcon, Paperclip } from "lucide-react";
 
 interface AttachmentDropdownProps {
-  setMediaFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  setMediaFiles: (files: File[]) => void;
 }
 
 const AttachmentDropdown = ({ setMediaFiles }: AttachmentDropdownProps) => {

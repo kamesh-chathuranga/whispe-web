@@ -6,9 +6,11 @@ import { MouseDownEvent } from "emoji-picker-react/dist/config/config";
 import { Mic, SendHorizonal } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import AudioRecorder from "./audio-recorder";
-import AttachmentWrapper from "./attachment-wrapper";
 import EmojiPicker from "../custom/emoji-picker";
 import useMessageSend from "@/hooks/use-message-send";
+import { useStore } from "@/store";
+import AttachmentDropdown from "./attachment-dropdown";
+import MediaPreviewCard from "./media-preview-card";
 
 interface MessageBarProps {
   onTypingStatusChange: () => void;
@@ -16,6 +18,7 @@ interface MessageBarProps {
 
 const MessageBar = ({ onTypingStatusChange }: MessageBarProps) => {
   const { onMessageSend } = useMessageSend();
+  const { mediaFiles, setMediaFiles } = useStore();
 
   const [message, setMessage] = React.useState("");
   const [showAudioRec, setShowAudioRec] = React.useState(false);
@@ -51,7 +54,16 @@ const MessageBar = ({ onTypingStatusChange }: MessageBarProps) => {
       ) : (
         <>
           <EmojiPicker onEmojiClick={addEmoji} />
-          <AttachmentWrapper message={message} setMessage={setMessage} />
+
+          <AttachmentDropdown setMediaFiles={setMediaFiles} />
+
+          {mediaFiles.length > 0 && (
+            <MediaPreviewCard
+              caption={message}
+              mediaFiles={mediaFiles}
+              onClose={() => setMediaFiles([])}
+            />
+          )}
 
           <Textarea
             className="focus-visible:ring-0 focus-visible:ring-offset-0 resize-none min-h-[40px] max-h-[120px] py-2"

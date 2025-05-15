@@ -5,7 +5,7 @@ import Link from "next/link";
 import { type SingleChat } from "@/types/types";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { User } from "lucide-react";
+import { ImageIcon, User } from "lucide-react";
 import Image from "next/image";
 import { useStore } from "@/store";
 import { formatLastMessageTime } from "@/lib/calculateTime";
@@ -82,6 +82,11 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
     };
   }, [truncateMessage]);
 
+  const capitalizeWord = useCallback((word: string) => {
+    if (!word) return "";
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }, []);
+
   return (
     <Link
       href={`/chat/${_id}`}
@@ -119,11 +124,15 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
               {lastMessage && lastMessage?.sender._id === currentUser?.id && (
                 <MessageStatus status={lastMessage.status} />
               )}
+              {lastMessage?.attachment && (
+                <ImageIcon className="size-3.5 text-gray-500" />
+              )}
               <p
                 className="mt-1 text-sm text-gray-500"
                 style={{ whiteSpace: "nowrap" }}
               >
-                {displayMessage}
+                {displayMessage ||
+                  capitalizeWord(lastMessage?.attachment?.type || "")}
               </p>
             </div>
             <span

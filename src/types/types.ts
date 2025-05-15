@@ -36,7 +36,7 @@ export interface SingleChat {
 }
 
 export interface Attachment {
-  url: string;
+  objectKey: string;
   type: "image" | "audio" | "video" | "file";
   filename: string;
   size: number;
@@ -48,7 +48,7 @@ export interface Message {
   _id: string;
   sender: Person;
   content: string;
-  attachments?: Attachment[];
+  attachment?: Attachment;
   createdAt: string;
   chat: string;
   status: "sent" | "delivered" | "read";
@@ -74,13 +74,11 @@ export interface FriendStatus {
   lastSeen?: string;
 }
 
-export interface MediaUploadRequest {
-  filename: string;
-  contentType: string;
-}
-
 export interface MediaUploadResponse {
   filename: string;
   url: string;
-  key: string;
+  objectKey: string;
+  mimeType: string;
+  size: number;
+  type: Attachment["type"];
 }

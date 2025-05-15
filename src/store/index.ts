@@ -20,7 +20,11 @@ interface Store {
   peer: PeerData | null;
   isCallEnded: boolean;
   friendStatuses: FriendStatus[];
+  mediaFiles: File[];
+  isMediaFilesUploading: boolean;
 
+  setIsMediaFilesUploading: (isUploading: boolean) => void;
+  setMediaFiles: (files: File[]) => void;
   setIncomingCall: (incomingCall: IncomingCall | null) => void;
   setCurrentChat: (chat: SingleChat | null) => void;
   setLocalStream: (stream: MediaStream | null) => void;
@@ -47,6 +51,8 @@ export const useStore = create<Store>()((set) => ({
   peer: null,
   isCallEnded: false,
   friendStatuses: [],
+  mediaFiles: [],
+  isMediaFilesUploading: false,
 
   setIncomingCall: (incomingCall) => set({ incomingCall }),
   setCurrentChat: (chat) => set({ currentChat: chat }),
@@ -57,6 +63,9 @@ export const useStore = create<Store>()((set) => ({
   setFriendRequests: (friendRequests) => set({ friendRequests }),
   setIsCallEnded: (isCallEnded) => set({ isCallEnded }),
   setFriendStatuses: (friendStatuses) => set({ friendStatuses }),
+  setMediaFiles: (files) => set({ mediaFiles: files }),
+  setIsMediaFilesUploading: (isUploading) =>
+    set({ isMediaFilesUploading: isUploading }),
 
   setPeer: (peer) =>
     set((state) => ({

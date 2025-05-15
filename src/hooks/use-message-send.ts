@@ -9,12 +9,12 @@ const useMessageSend = () => {
   const chatId = currentChat?._id;
 
   const onMessageSend = useCallback(
-    (message: string, attachments: Attachment[] = []) => {
+    (message: string, attachment?: Attachment) => {
       if (!chatId) return;
 
       socket.emit(
         "message:send",
-        { chatId, content: message, attachments },
+        { chatId, content: message, attachment },
         (res: any) => {
           if (res.status !== 201) console.log(res.error);
         }
