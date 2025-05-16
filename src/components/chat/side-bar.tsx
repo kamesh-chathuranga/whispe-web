@@ -19,6 +19,7 @@ import { DEFAULT_SIGNOUT_REDIRECT } from "@/routes";
 import { AxiosError } from "axios";
 import toast from "react-hot-toast";
 import socket from "@/lib/socket";
+import { useQueryClient, InfiniteData } from "@tanstack/react-query";
 import {
   FriendStatus,
   IncomingCall,
@@ -30,6 +31,7 @@ import CallNotification from "../custom/call-notification";
 import { SignalData } from "simple-peer";
 import useVideoCall from "@/hooks/use-media-call";
 import LogoutButton from "../custom/logout-button";
+import { MessagesResponse } from "@/hooks/use-chat-api";
 
 const sideBarData = [
   {
@@ -85,7 +87,7 @@ const SideBar = () => {
     friendRequests,
     chatList,
     setChatList,
-    messages,
+
     setMessages,
     incomingCall: incomingCallDetails,
     setIncomingCall,
@@ -95,7 +97,7 @@ const SideBar = () => {
     friendStatuses,
     setFriendStatuses,
   } = useStore();
-  // const [unseenNotificationCount, setUnseenRequestCount] = useState(0);
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathName = usePathname();
   const { createPeerConnection, handleHangUp } = useVideoCall();
@@ -160,11 +162,25 @@ const SideBar = () => {
         socket.emit("message:delivered", { messageId: message._id });
       }
 
-      const chat = chatList.map((chat) =>
+      const chats = chatList.map((chat) =>
         chat._id === message.chat ? { ...chat, lastMessage: message } : chat
       );
-      setChatList(chat);
-      setMessages([...messages, message]);
+      setChatList(chats);
+
+      queryClient.setQueryData(
+        ["messages", message.chat],
+        (oldData: InfiniteData<MessagesResponse> | undefined) => {
+          if (!oldData) return undefined;
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              messages: [...page.messages, message],
+            })),
+          };
+        }
+      );
+
       const shouldNotified =
         pathName !== `/chat/${message.chat}` &&
         currentUser.id !== message.sender._id;
@@ -193,8 +209,8 @@ const SideBar = () => {
     chatList,
     currentUser?.id,
     friendRequests,
-    messages,
     pathName,
+    queryClient,
     setChatList,
     setFriendRequests,
     setMessages,

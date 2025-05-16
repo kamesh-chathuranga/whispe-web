@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Poppins } from "next/font/google";
 import { Toaster } from "react-hot-toast";
+import QueryProvider from "../components/custom/query-provider";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -28,7 +29,7 @@ export default async function RootLayout({
       <body
         className={`${poppins.className} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <QueryProvider>{children}</QueryProvider>
         <Toaster position="bottom-right" />
       </body>
     </html>

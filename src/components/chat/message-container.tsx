@@ -11,10 +11,21 @@ interface MessageContainerProps {
   onScroll: () => void;
   loadingHistory: boolean;
   isTyping: boolean;
+  isUserAtBottom: boolean;
 }
 
 const MessageContainer = forwardRef<HTMLDivElement, MessageContainerProps>(
-  ({ messages, currentUserId, loadingHistory, onScroll, isTyping }, ref) => {
+  (
+    {
+      messages,
+      currentUserId,
+      loadingHistory,
+      onScroll,
+      isTyping,
+      isUserAtBottom,
+    },
+    ref
+  ) => {
     const [chatContextOpen, setChatContextOpen] = useState(false);
     const [position, setPosition] = useState({ x: 0, y: 0 });
 
@@ -59,7 +70,7 @@ const MessageContainer = forwardRef<HTMLDivElement, MessageContainerProps>(
           );
         })}
 
-        {isTyping && (
+        {isTyping && isUserAtBottom && (
           <div className="flex my-1 justify-start">
             <div className="px-3 py-[8px] text-sm flex items-center gap-1 max-w-[45%] bg-white text-black rounded-sm shadow-md">
               <span
