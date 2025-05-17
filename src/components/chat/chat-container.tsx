@@ -212,15 +212,18 @@ const ChatContainer = () => {
     <div className="flex flex-col h-screen w-full">
       <ChatHeader chat={currentChat} />
       <MessageContainer
-        onScroll={handleScroll}
         ref={containerRef}
         messages={messages}
-        currentUserId={currentUser.id}
-        loadingHistory={isFetchingNextPage}
         isTyping={isTyping}
+        onScroll={handleScroll}
+        userId={currentUser.id}
         isUserAtBottom={userIsAtBottom}
+        loadingHistory={isFetchingNextPage}
       />
-      <MessageBar onTypingStatusChange={handleTypingStatus} />
+      <MessageBar
+        chatId={currentChat._id}
+        onTypingStatusChange={handleTypingStatus}
+      />
     </div>
   );
 };

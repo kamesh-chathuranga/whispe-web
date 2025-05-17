@@ -7,17 +7,17 @@ import { Mic, SendHorizonal } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import AudioRecorder from "./audio-recorder";
 import EmojiPicker from "../custom/emoji-picker";
-import useMessageSend from "@/hooks/use-message-send";
+import { onMessageSend } from "@/lib/sendMessage";
 import { useStore } from "@/store";
 import AttachmentDropdown from "./attachment-dropdown";
 import MediaPreviewCard from "./media-preview-card";
 
 interface MessageBarProps {
+  chatId: string;
   onTypingStatusChange: () => void;
 }
 
-const MessageBar = ({ onTypingStatusChange }: MessageBarProps) => {
-  const { onMessageSend } = useMessageSend();
+const MessageBar = ({ chatId, onTypingStatusChange }: MessageBarProps) => {
   const { mediaFiles, setMediaFiles } = useStore();
 
   const [message, setMessage] = React.useState("");
@@ -40,7 +40,7 @@ const MessageBar = ({ onTypingStatusChange }: MessageBarProps) => {
   };
 
   const sendMessage = () => {
-    onMessageSend(message);
+    onMessageSend(chatId, message);
     setMessage("");
   };
 

@@ -1,40 +1,47 @@
 /* eslint-disable @next/next/no-img-element */
-import React, { Fragment, useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   formatMessageTimestamp,
   formatDateSeparator,
   isSameDay,
 } from "@/lib/calculateTime";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { Message } from "@/types/types"; // Ensure Attachment type is defined
 import MessageStatus from "./message-status";
-import MessageContextMenu from "./message-context-menu";
 import API from "@/lib/axios";
-
-// Define Attachment type if not already defined in @/types/types.ts
-// Example:
-// export interface Attachment {
-//   id: string; // Or any unique key for the attachment
-//   fileName: string;
-//   fileType: string; // MIME type e.g. "image/png", "video/mp4"
-//   // Add other relevant properties like size, etc. if needed
-// }
+import {
+  Copy,
+  Forward,
+  Info,
+  Pin,
+  Reply,
+  Share,
+  SquareCheck,
+  Star,
+  Trash2,
+} from "lucide-react";
+import socket from "@/lib/socket";
 
 interface MessageBubbleProps {
   idx: number;
-  message: Message; // Ensure Message type includes `attachments?: Attachment[]` and `chatId: string`
-  currentUserId: string;
+  message: Message;
+  userId: string;
   prevMessage: Message | null;
 }
 
 const MessageBubble = ({
   idx,
   message,
-  currentUserId,
+  userId,
   prevMessage,
 }: MessageBubbleProps) => {
-  const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [attachmentUrl, setAttachmentUrl] = useState<string>("");
   const [loadingAttachments, setLoadingAttachments] = useState(false);
 
@@ -44,22 +51,14 @@ const MessageBubble = ({
     idx === 0 || (prevDate && !isSameDay(messageDate, prevDate));
   const hasPrevMessageFromSameUser =
     prevMessage?.sender._id === message.sender._id;
-  const isOwn = message.sender._id === currentUserId;
-
-  const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setPosition({ x: e.clientX, y: e.clientY });
-    setOpen(true);
-  };
+  const isOwn = message.sender._id === userId;
 
   useEffect(() => {
-    setAttachmentUrl(""); // Reset URLs when message changes
+    setAttachmentUrl("");
     if (message.attachment && message.chat && message._id) {
       const fetchAttachmentUrls = async () => {
         setLoadingAttachments(true);
         try {
-          // IMPORTANT: Verify this API endpoint with your backend implementation.
-          // It should return an array of strings (signed URLs).
           const response = await API.get(
             `/chats/${message.chat}/${message._id}/media/view`
           );
@@ -85,7 +84,6 @@ const MessageBubble = ({
 
   const displayAttachment = () => {
     const url = attachmentUrl;
-    // Ensure attachment has id, fileType, and fileName properties.
     if (
       !url ||
       !message.attachment ||
@@ -148,8 +146,18 @@ const MessageBubble = ({
     }
   };
 
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(message.content);
+  }, [message.content]);
+
+  const handleDeleteForMe = useCallback(() => {
+    if (message._id) {
+      socket.emit("message:deleteForMe", { messageId: message._id });
+    }
+  }, [message._id]);
+
   return (
-    <Fragment key={message._id}>
+    <ContextMenu key={message._id}>
       {showSeparator && (
         <div className="flex justify-center my-2">
           <span className="px-3 py-1 text-xs font-medium text-gray-600 bg-accent rounded-sm">
@@ -157,72 +165,111 @@ const MessageBubble = ({
           </span>
         </div>
       )}
-
-      <MessageContextMenu
-        position={position}
-        open={open}
-        onOpenChange={setOpen}
-        message={message}
-        isOwn={isOwn}
-      />
-
       <div
         className={cn("flex mb-0.5", isOwn ? "justify-end" : "justify-start")}
       >
-        <div
-          data-message-bubble="true"
-          onContextMenu={handleContextMenu}
-          className={cn(
-            "px-2 py-[0.4rem] text-sm flex flex-col gap-1 max-w-[45%] rounded-md text-black shadow-md relative",
-            isOwn ? "bg-[#d8fad0]" : "bg-white",
-            {
-              "rounded-tr-none": !hasPrevMessageFromSameUser && isOwn,
-              "rounded-tl-none": !hasPrevMessageFromSameUser && !isOwn,
-            }
-          )}
-        >
-          {/* Attachments Display */}
-          {message.attachment && (
-            <div className="mt-0.5 flex flex-col gap-2 w-full shadow-md rounded-md hover:shadow-lg transition-shadow duration-200 ease-in-out">
-              {loadingAttachments && (
-                <p className="text-xs text-gray-500">Loading attachments...</p>
-              )}
-              {!loadingAttachments && attachmentUrl && displayAttachment()}
-
-              {!loadingAttachments && !attachmentUrl && !message.attachment && (
-                <p className="text-xs text-red-500">
-                  Could not load attachments.
-                </p>
-              )}
-            </div>
-          )}
-
+        <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "flex gap-4 items-center",
-              message.attachment && "justify-between"
+              "px-2 py-[0.4rem] text-sm flex flex-col gap-1 max-w-[45%] rounded-md text-black shadow-md relative",
+              isOwn ? "bg-[#d8fad0]" : "bg-white",
+              {
+                "rounded-tr-none": !hasPrevMessageFromSameUser && isOwn,
+                "rounded-tl-none": !hasPrevMessageFromSameUser && !isOwn,
+              }
             )}
           >
-            <span className="break-all">{message.content}</span>
+            {/* Attachments Display */}
+            {message.attachment && (
+              <div className="mt-0.5 flex flex-col gap-2 w-full shadow-md rounded-md hover:shadow-lg transition-shadow duration-200 ease-in-out">
+                {loadingAttachments && (
+                  <p className="text-xs text-gray-500">
+                    Loading attachments...
+                  </p>
+                )}
+                {!loadingAttachments && attachmentUrl && displayAttachment()}
+
+                {!loadingAttachments &&
+                  !attachmentUrl &&
+                  !message.attachment && (
+                    <p className="text-xs text-red-500">
+                      Could not load attachments.
+                    </p>
+                  )}
+              </div>
+            )}
+
             <div
               className={cn(
-                "flex gap-1 self-end items-center -mb-[6px] -mr-[2px] min-w-fit text-message-time",
-                message.attachment &&
-                  !message.content &&
-                  "absolute right-6 bottom-5 text-white z-50"
+                "flex gap-4 items-center",
+                message.attachment && "justify-between"
               )}
             >
-              <span className="pt-1 min-w-fit text-[9.5px] ">
-                {formatMessageTimestamp(messageDate)}
-              </span>
-              {message.sender._id === currentUserId && (
-                <MessageStatus status={message.status} />
-              )}
+              <span className="break-all">{message.content}</span>
+              <div
+                className={cn(
+                  "flex gap-1 self-end items-center -mb-[6px] -mr-[2px] min-w-fit text-message-time",
+                  message.attachment &&
+                    !message.content &&
+                    "absolute right-6 bottom-5 text-white z-50"
+                )}
+              >
+                <span className="pt-1 min-w-fit text-[9.5px] ">
+                  {formatMessageTimestamp(messageDate)}
+                </span>
+                {message.sender._id === userId && (
+                  <MessageStatus status={message.status} />
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        </ContextMenuTrigger>
       </div>
-    </Fragment>
+      <ContextMenuContent className="w-64">
+        <ContextMenuItem>
+          <Reply className="mr-3 h-4 w-4" />
+          Reply
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleCopy}>
+          <Copy className="mr-3 h-4 w-4" />
+          Copy
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+
+        <ContextMenuItem>
+          <Forward className="mr-3 h-4 w-4" />
+          Forward
+        </ContextMenuItem>
+        <ContextMenuItem>
+          <Star className="mr-3 h-4 w-4" />
+          Star
+        </ContextMenuItem>
+        <ContextMenuItem>
+          <Pin className="mr-3 h-4 w-4" />
+          Pin
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleDeleteForMe}>
+          <Trash2 className="mr-3 h-4 w-4" />
+          Delete
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+
+        <ContextMenuItem>
+          <SquareCheck className="mr-3 h-4 w-4" />
+          Select
+        </ContextMenuItem>
+        <ContextMenuItem>
+          <Share className="mr-3 h-4 w-4" />
+          Share
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+
+        <ContextMenuItem>
+          <Info className="mr-3 h-4 w-4" />
+          Info
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 };
 

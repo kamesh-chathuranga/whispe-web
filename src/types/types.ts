@@ -51,7 +51,7 @@ export interface Message {
   attachment?: Attachment;
   createdAt: string;
   chat: string;
-  status: "sent" | "delivered" | "read";
+  status: "submit" | "sent" | "delivered" | "read" | "failed";
   isDeleted?: boolean;
 }
 

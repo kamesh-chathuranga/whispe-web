@@ -22,8 +22,6 @@ const useMediaCall = () => {
 
   const handleHangUp = useCallback(
     (data: { incomingCall?: IncomingCall; isEmitiHangUp?: boolean }) => {
-      console.log("Hang up call", data?.incomingCall);
-
       if (socket && currentUser && data?.incomingCall && data.isEmitiHangUp) {
         socket.emit("call:hangup", {
           incomingCall: data.incomingCall,

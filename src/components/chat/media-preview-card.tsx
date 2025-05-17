@@ -4,7 +4,7 @@ import React, { useCallback, useRef, useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import EmojiPicker from "../custom/emoji-picker"; // Assuming this component exists
-import useMessageSend from "@/hooks/use-message-send"; // Assuming this hook exists
+import { onMessageSend } from "@/lib/sendMessage"; // Assuming this hook exists
 import mediaUploader from "@/lib/mediaUploader"; // Assuming this function exists
 import { useStore } from "@/store"; // Assuming this store exists
 import { v4 as uuidv4 } from "uuid"; // Import uuid for generating unique IDs
@@ -31,7 +31,6 @@ const MediaPreviewCard = ({
   onClose,
 }: MediaPreviewCardProps) => {
   const { currentChat } = useStore(); // Assuming currentChat has _id
-  const { onMessageSend } = useMessageSend();
 
   // Use a single state to manage media items including files, captions, and object URLs
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
@@ -83,13 +82,13 @@ const MediaPreviewCard = ({
 
       // Send each message with its corresponding caption and attachment
       attachments.forEach((attachment, index) => {
-        onMessageSend(captionsToSend[index] || "", attachment);
+        onMessageSend(currentChat._id, captionsToSend[index] || "", attachment);
       });
     } catch (error) {
-      console.error("Error uploading or sending message:", error);
+      console.log("Error uploading or sending message:", error);
       // Handle errors, potentially by showing a message to the user
     }
-  }, [mediaItems, currentChat, onMessageSend, setMediaItems, onClose]); // Add dependencies
+  }, [mediaItems, currentChat, setMediaItems, onClose]); // Add dependencies
 
   const handleMediaFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
