@@ -36,6 +36,7 @@ export interface SingleChat {
 }
 
 export interface Attachment {
+  url?: string;
   objectKey: string;
   type: "image" | "audio" | "video" | "file";
   filename: string;
@@ -51,7 +52,7 @@ export interface Message {
   attachment?: Attachment;
   createdAt: string;
   chat: string;
-  status: "submit" | "sent" | "delivered" | "read" | "failed";
+  status: "pending" | "sent" | "delivered" | "read" | "failed";
   isDeleted?: boolean;
 }
 

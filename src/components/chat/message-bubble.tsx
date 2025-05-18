@@ -1,5 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback } from "react";
 import {
   formatMessageTimestamp,
   formatDateSeparator,
@@ -13,9 +12,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
-import { Message } from "@/types/types"; // Ensure Attachment type is defined
+import { Message } from "@/types/types";
 import MessageStatus from "./message-status";
-import API from "@/lib/axios";
 import {
   Copy,
   Forward,
@@ -28,6 +26,7 @@ import {
   Trash2,
 } from "lucide-react";
 import socket from "@/lib/socket";
+import AttachmentDisplay from "./attachment-display";
 
 interface MessageBubbleProps {
   idx: number;
@@ -42,9 +41,6 @@ const MessageBubble = ({
   userId,
   prevMessage,
 }: MessageBubbleProps) => {
-  const [attachmentUrl, setAttachmentUrl] = useState<string>("");
-  const [loadingAttachments, setLoadingAttachments] = useState(false);
-
   const messageDate = new Date(message.createdAt);
   const prevDate = prevMessage ? new Date(prevMessage.createdAt) : null;
   const showSeparator =
@@ -52,99 +48,6 @@ const MessageBubble = ({
   const hasPrevMessageFromSameUser =
     prevMessage?.sender._id === message.sender._id;
   const isOwn = message.sender._id === userId;
-
-  useEffect(() => {
-    setAttachmentUrl("");
-    if (message.attachment && message.chat && message._id) {
-      const fetchAttachmentUrls = async () => {
-        setLoadingAttachments(true);
-        try {
-          const response = await API.get(
-            `/chats/${message.chat}/${message._id}/media/view`
-          );
-          if (!response.data) {
-            console.error(
-              "Failed to fetch attachment URLs:",
-              response.statusText
-            );
-            setAttachmentUrl("");
-            return;
-          }
-          setAttachmentUrl(response.data.url);
-        } catch (error) {
-          console.error("Error fetching attachment URLs:", error);
-          setAttachmentUrl("");
-        } finally {
-          setLoadingAttachments(false);
-        }
-      };
-      fetchAttachmentUrls();
-    }
-  }, [message.attachment, message._id, message.chat]);
-
-  const displayAttachment = () => {
-    const url = attachmentUrl;
-    if (
-      !url ||
-      !message.attachment ||
-      !message.attachment.mimeType ||
-      !message.attachment.filename
-    ) {
-      return null;
-    }
-
-    switch (message.attachment.type) {
-      case "image":
-        return (
-          <div className="relative">
-            <img
-              src={url}
-              alt={message.attachment.filename}
-              className="w-80 h-auto rounded-md border object-contain"
-            />
-            {!message.content && (
-              <div className="absolute bottom-0 left-0 w-full h-1/4 bg-gradient-to-t from-black/20 to-transparent rounded-b-md" />
-            )}
-          </div>
-        );
-      case "video":
-        return (
-          <video
-            src={url}
-            controls
-            className="max-w-full h-auto rounded-md border"
-          />
-        );
-      case "audio":
-        return <audio src={url} controls className="w-full" />;
-      default: // 'file'
-        return (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            download={message.attachment.filename}
-            className="p-2 border rounded-md flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400 break-all"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 flex-shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-              />
-            </svg>
-            <span>{message.attachment.filename}</span>
-          </a>
-        );
-    }
-  };
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(message.content);
@@ -171,8 +74,9 @@ const MessageBubble = ({
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "px-2 py-[0.4rem] text-sm flex flex-col gap-1 max-w-[45%] rounded-md text-black shadow-md relative",
+              "text-sm flex flex-col gap-1 max-w-[45%] rounded-md text-black shadow-md relative",
               isOwn ? "bg-[#d8fad0]" : "bg-white",
+              message.attachment ? "px-[5px] py-1" : "px-2 py-[0.4rem] ",
               {
                 "rounded-tr-none": !hasPrevMessageFromSameUser && isOwn,
                 "rounded-tl-none": !hasPrevMessageFromSameUser && !isOwn,
@@ -180,24 +84,7 @@ const MessageBubble = ({
             )}
           >
             {/* Attachments Display */}
-            {message.attachment && (
-              <div className="mt-0.5 flex flex-col gap-2 w-full shadow-md rounded-md hover:shadow-lg transition-shadow duration-200 ease-in-out">
-                {loadingAttachments && (
-                  <p className="text-xs text-gray-500">
-                    Loading attachments...
-                  </p>
-                )}
-                {!loadingAttachments && attachmentUrl && displayAttachment()}
-
-                {!loadingAttachments &&
-                  !attachmentUrl &&
-                  !message.attachment && (
-                    <p className="text-xs text-red-500">
-                      Could not load attachments.
-                    </p>
-                  )}
-              </div>
-            )}
+            {message.attachment && <AttachmentDisplay message={message} />}
 
             <div
               className={cn(

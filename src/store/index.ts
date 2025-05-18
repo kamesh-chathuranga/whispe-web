@@ -2,7 +2,6 @@ import {
   SingleChat,
   ReceivedFriendRequest,
   User,
-  Message,
   IncomingCall,
   PeerData,
   FriendStatus,
@@ -13,7 +12,6 @@ interface Store {
   currentUser: User | null;
   friendRequests: ReceivedFriendRequest[];
   chatList: SingleChat[];
-  messages: Message[];
   localStream: MediaStream | null;
   currentChat: SingleChat | null;
   incomingCall: IncomingCall | null;
@@ -21,14 +19,11 @@ interface Store {
   isCallEnded: boolean;
   friendStatuses: FriendStatus[];
   mediaFiles: File[];
-  isMediaFilesUploading: boolean;
 
-  setIsMediaFilesUploading: (isUploading: boolean) => void;
   setMediaFiles: (files: File[]) => void;
   setIncomingCall: (incomingCall: IncomingCall | null) => void;
   setCurrentChat: (chat: SingleChat | null) => void;
   setLocalStream: (stream: MediaStream | null) => void;
-  setMessages: (messages: Message[]) => void;
   setChatList: (chatList: SingleChat[]) => void;
   setFriendRequests: (friendRequests: ReceivedFriendRequest[]) => void;
   setCurrentUser: (user: User | null) => void;
@@ -44,7 +39,6 @@ export const useStore = create<Store>()((set) => ({
   currentUser: null,
   friendRequests: [],
   chatList: [],
-  messages: [],
   localStream: null,
   currentChat: null,
   incomingCall: null,
@@ -52,20 +46,16 @@ export const useStore = create<Store>()((set) => ({
   isCallEnded: false,
   friendStatuses: [],
   mediaFiles: [],
-  isMediaFilesUploading: false,
 
   setIncomingCall: (incomingCall) => set({ incomingCall }),
   setCurrentChat: (chat) => set({ currentChat: chat }),
   setLocalStream: (stream) => set({ localStream: stream }),
-  setMessages: (messages) => set({ messages }),
   setChatList: (chatList) => set({ chatList }),
   setCurrentUser: (user) => set({ currentUser: user }),
   setFriendRequests: (friendRequests) => set({ friendRequests }),
   setIsCallEnded: (isCallEnded) => set({ isCallEnded }),
   setFriendStatuses: (friendStatuses) => set({ friendStatuses }),
   setMediaFiles: (files) => set({ mediaFiles: files }),
-  setIsMediaFilesUploading: (isUploading) =>
-    set({ isMediaFilesUploading: isUploading }),
 
   setPeer: (peer) =>
     set((state) => ({

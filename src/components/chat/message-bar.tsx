@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { Button } from "../ui/button";
 import { MouseDownEvent } from "emoji-picker-react/dist/config/config";
 import { Mic, SendHorizonal } from "lucide-react";
@@ -11,38 +11,67 @@ import { onMessageSend } from "@/lib/sendMessage";
 import { useStore } from "@/store";
 import AttachmentDropdown from "./attachment-dropdown";
 import MediaPreviewCard from "./media-preview-card";
+import { Message, Person, User } from "@/types/types";
+import { v4 as uuidv4 } from "uuid";
+import useMessageMutation from "@/hooks/use-message";
 
 interface MessageBarProps {
+  user: User;
   chatId: string;
   onTypingStatusChange: () => void;
 }
 
-const MessageBar = ({ chatId, onTypingStatusChange }: MessageBarProps) => {
+const MessageBar = ({
+  user,
+  chatId,
+  onTypingStatusChange,
+}: MessageBarProps) => {
+  const { addNewMessage } = useMessageMutation();
   const { mediaFiles, setMediaFiles } = useStore();
 
   const [message, setMessage] = React.useState("");
   const [showAudioRec, setShowAudioRec] = React.useState(false);
 
-  const addEmoji: MouseDownEvent = (emojiData) => {
+  const addEmoji: MouseDownEvent = useCallback((emojiData) => {
     setMessage((prev) => prev + emojiData.emoji);
-  };
+  }, []);
 
-  const handleKeyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-    onTypingStatusChange();
-  };
+  const handleKeyChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setMessage(e.target.value);
+      onTypingStatusChange();
+    },
+    [onTypingStatusChange]
+  );
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey && message.trim()) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const sendMessage = () => {
-    onMessageSend(chatId, message);
+  const sendMessage = useCallback(() => {
+    const tempId = uuidv4();
+    const newMessage: Message = {
+      _id: tempId,
+      content: message,
+      sender: {
+        _id: user.id,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+      } as Person,
+      chat: chatId,
+      createdAt: new Date().toISOString(),
+      status: "pending",
+    };
+    addNewMessage(newMessage);
+    onMessageSend(chatId, message, tempId);
     setMessage("");
-  };
+  }, [chatId, message, addNewMessage, user.avatarUrl, user.id, user.name]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey && message.trim()) {
+        e.preventDefault();
+        sendMessage();
+      }
+    },
+    [message, sendMessage]
+  );
 
   return (
     <div className="flex items-center p-3 h-[10%] relative border-t border-gray-200 gap-1">

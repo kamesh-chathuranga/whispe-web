@@ -19,7 +19,6 @@ import { DEFAULT_SIGNOUT_REDIRECT } from "@/routes";
 import { AxiosError } from "axios";
 import toast from "react-hot-toast";
 import socket from "@/lib/socket";
-import { useQueryClient, InfiniteData } from "@tanstack/react-query";
 import {
   FriendStatus,
   IncomingCall,
@@ -31,7 +30,7 @@ import CallNotification from "../custom/call-notification";
 import { SignalData } from "simple-peer";
 import useVideoCall from "@/hooks/use-media-call";
 import LogoutButton from "../custom/logout-button";
-import { MessagesResponse } from "@/hooks/use-chat-api";
+import useMessageMutation from "@/hooks/use-message";
 
 const sideBarData = [
   {
@@ -87,8 +86,6 @@ const SideBar = () => {
     friendRequests,
     chatList,
     setChatList,
-
-    setMessages,
     incomingCall: incomingCallDetails,
     setIncomingCall,
     localStream,
@@ -97,9 +94,9 @@ const SideBar = () => {
     friendStatuses,
     setFriendStatuses,
   } = useStore();
-  const queryClient = useQueryClient();
   const router = useRouter();
   const pathName = usePathname();
+  const { addNewMessage, updateMessage } = useMessageMutation();
   const { createPeerConnection, handleHangUp } = useVideoCall();
 
   useEffect(() => {
@@ -157,63 +154,58 @@ const SideBar = () => {
       );
     });
 
-    socket.on("message:new", (message: Message) => {
-      if (message.sender._id !== currentUser.id) {
-        socket.emit("message:delivered", { messageId: message._id });
-      }
-
-      const chats = chatList.map((chat) =>
-        chat._id === message.chat ? { ...chat, lastMessage: message } : chat
-      );
-      setChatList(chats);
-
-      queryClient.setQueryData(
-        ["messages", message.chat],
-        (oldData: InfiniteData<MessagesResponse> | undefined) => {
-          if (!oldData) return undefined;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              messages: [...page.messages, message],
-            })),
-          };
+    socket.on(
+      "message:new",
+      ({ tempId, message }: { tempId: string; message: Message }) => {
+        if (message.sender._id !== currentUser.id) {
+          socket.emit("message:delivered", { messageId: message._id });
         }
-      );
 
-      const shouldNotified =
-        pathName !== `/chat/${message.chat}` &&
-        currentUser.id !== message.sender._id;
+        const chats = chatList.map((chat) =>
+          chat._id === message.chat ? { ...chat, lastMessage: message } : chat
+        );
+        setChatList(chats);
 
-      if (!shouldNotified) return;
+        if (message.sender._id === currentUser.id) {
+          updateMessage(tempId, message);
+        } else {
+          addNewMessage(message);
+        }
 
-      toast.custom(
-        (t) => (
-          <Notification
-            t={t}
-            url={`/chat/${message.chat}`}
-            senderName={message.sender.name}
-            image={message.sender.avatarUrl}
-            message={message.content}
-          />
-        ),
-        { position: "top-center" }
-      );
-    });
+        const shouldNotified =
+          pathName !== `/chat/${message.chat}` &&
+          currentUser.id !== message.sender._id;
+
+        if (!shouldNotified) return;
+
+        toast.custom(
+          (t) => (
+            <Notification
+              t={t}
+              url={`/chat/${message.chat}`}
+              senderName={message.sender.name}
+              image={message.sender.avatarUrl}
+              message={message.content}
+            />
+          ),
+          { position: "top-center" }
+        );
+      }
+    );
 
     return () => {
       socket.off("friendRequest:received");
       socket.off("message:new");
     };
   }, [
+    addNewMessage,
     chatList,
     currentUser?.id,
     friendRequests,
     pathName,
-    queryClient,
     setChatList,
     setFriendRequests,
-    setMessages,
+    updateMessage,
   ]);
 
   useEffect(() => {

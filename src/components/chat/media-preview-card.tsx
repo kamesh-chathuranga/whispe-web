@@ -1,119 +1,141 @@
 /* eslint-disable @next/next/no-img-element */
-import { Plus, SendHorizonal, Trash2 } from "lucide-react";
 import React, { useCallback, useRef, useState, useEffect } from "react";
+import { Plus, SendHorizonal, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import EmojiPicker from "../custom/emoji-picker"; // Assuming this component exists
-import { onMessageSend } from "@/lib/sendMessage"; // Assuming this hook exists
-import mediaUploader from "@/lib/mediaUploader"; // Assuming this function exists
-import { useStore } from "@/store"; // Assuming this store exists
-import { v4 as uuidv4 } from "uuid"; // Import uuid for generating unique IDs
+import EmojiPicker from "../custom/emoji-picker";
+import { onMessageSend } from "@/lib/sendMessage";
+import mediaUploader from "@/lib/mediaUploader";
+import { useStore } from "@/store";
+import { v4 as uuidv4 } from "uuid";
+import { Attachment, Message, Person } from "@/types/types";
+import useUpdateMessages from "@/hooks/use-message";
 
-// Define the interface for a single media item in the state
 interface MediaItem {
-  id: string; // Unique ID for reliable state management and list keys
+  id: string;
   file: File;
   caption: string;
-  objectUrl: string; // Store the object URL directly with the item
+  objectUrl: string;
 }
 
 interface MediaPreviewCardProps {
-  caption?: string; // Optional caption prop for initial state
-  mediaFiles: File[]; // Keep this prop to receive initial files
-  // setMediaFiles: (files: File[]) => void; // Keep this prop to update parent state if necessary, though refactored state is internal now
-  onClose: () => void; // Callback to close the preview card
+  caption?: string;
+  mediaFiles: File[];
+  onClose: () => void;
 }
 
 const MediaPreviewCard = ({
-  caption: initialCaption, // Default to empty string if not provided
-  mediaFiles: initialMediaFiles, // Rename prop for clarity
-  // setMediaFiles, // Still accepting but won't directly manage parent state of File[]
+  caption: initialCaption,
+  mediaFiles: initialMediaFiles,
   onClose,
 }: MediaPreviewCardProps) => {
-  const { currentChat } = useStore(); // Assuming currentChat has _id
-
-  // Use a single state to manage media items including files, captions, and object URLs
+  const { currentChat, currentUser } = useStore();
+  const { updateMessage } = useUpdateMessages();
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [previewIndex, setPreviewIndex] = useState(0);
 
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
   // Effect to initialize mediaItems when initialMediaFiles prop changes
-  // and to clean up object URLs on unmount or prop change
   useEffect(() => {
     const initialItems: MediaItem[] = initialMediaFiles.map((file, i) => ({
-      id: uuidv4(), // Generate unique ID for each initial file
+      id: uuidv4(),
       file,
-      caption: i === 0 ? initialCaption || "" : "", // Initialize with empty caption
-      objectUrl: URL.createObjectURL(file), // Create object URL for preview
+      caption: i === 0 ? initialCaption || "" : "",
+      objectUrl: URL.createObjectURL(file),
     }));
 
     setMediaItems(initialItems);
-    setPreviewIndex(0); // Reset preview index when initial files change
+    setPreviewIndex(0);
 
-    // Cleanup function to revoke object URLs
     return () => {
       initialItems.forEach((item) => URL.revokeObjectURL(item.objectUrl));
-      // Note: More granular cleanup for items added/removed after initial mount
-      // is handled in removeFile and sendMessageWithAttachments
     };
-  }, [initialCaption, initialMediaFiles]); // Rerun effect if the initial files array reference changes
+  }, [initialCaption, initialMediaFiles]);
 
   const sendMessageWithAttachments = useCallback(async () => {
     if (!mediaItems.length || !currentChat) return;
 
-    // Extract files and captions from the mediaItems state
-    const filesToSend = mediaItems.map((item) => item.file);
-    const captionsToSend = mediaItems.map((item) => item.caption);
+    const itemsToProcess = [...mediaItems];
 
-    // Clear media items state and revoke object URLs before uploading
-    // This provides immediate visual feedback that sending is in progress/done
-    const itemsToRevoke = [...mediaItems]; // Copy for revocation after state clear
     setMediaItems([]);
     setPreviewIndex(0);
-    // setMediaFiles([]); // Update parent state to clear files if needed
-    onClose(); // Close the preview card
+    onClose();
 
-    // Revoke object URLs immediately after clearing state
-    itemsToRevoke.forEach((item) => URL.revokeObjectURL(item.objectUrl));
+    // itemsToRevoke.forEach((item) => URL.revokeObjectURL(item.objectUrl));
 
-    try {
-      const attachments = await mediaUploader(filesToSend, currentChat?._id);
+    for (const item of itemsToProcess) {
+      const temporaryMessageId = uuidv4();
+      const temporaryMessage: Message = {
+        _id: temporaryMessageId,
+        chat: currentChat._id,
+        sender: {
+          _id: currentUser?.id,
+          name: currentUser?.name,
+          avatarUrl: currentUser?.avatarUrl,
+        } as Person,
+        content: item.caption || "",
+        attachment: {
+          url: item.objectUrl,
+          filename: item.file.name,
+          mimeType: item.file.type,
+          size: item.file.size,
+          type: item.file.type.startsWith("image")
+            ? "image"
+            : item.file.type.startsWith("video")
+            ? "video"
+            : item.file.type.startsWith("audio")
+            ? "audio"
+            : "file",
+          objectKey: "",
+        } as Attachment,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      };
 
-      // Send each message with its corresponding caption and attachment
-      attachments.forEach((attachment, index) => {
-        onMessageSend(currentChat._id, captionsToSend[index] || "", attachment);
-      });
-    } catch (error) {
-      console.log("Error uploading or sending message:", error);
-      // Handle errors, potentially by showing a message to the user
+      updateMessage(temporaryMessage);
+      try {
+        const attachment = await mediaUploader(item.file, currentChat?._id);
+        onMessageSend(
+          currentChat._id,
+          item.caption || "",
+          temporaryMessageId,
+          attachment
+        );
+      } catch (error) {
+        console.log("Error uploading or sending message:", error);
+      }
     }
-  }, [mediaItems, currentChat, setMediaItems, onClose]); // Add dependencies
+  }, [
+    mediaItems,
+    currentChat,
+    onClose,
+    currentUser?.id,
+    currentUser?.name,
+    currentUser?.avatarUrl,
+    updateMessage,
+  ]);
 
   const handleMediaFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files.length > 0) {
         const filesArray = Array.from(e.target.files);
 
-        // Filter out files that are already in the mediaItems state (basic check by name)
         const newFiles = filesArray.filter(
           (file) => !mediaItems.some((item) => item.file.name === file.name)
         );
 
         const newMediaItems: MediaItem[] = newFiles.map((file) => ({
-          id: uuidv4(), // Generate unique ID for new files
+          id: uuidv4(),
           file,
-          caption: "", // Initialize new files with empty captions
-          objectUrl: URL.createObjectURL(file), // Create object URL
+          caption: "",
+          objectUrl: URL.createObjectURL(file),
         }));
 
-        // Add new items to the existing mediaItems state
         setMediaItems((prevItems) => [...prevItems, ...newMediaItems]);
-        // Optionally update parent state if needed, but internal state is source of truth here
-        // setMediaFiles(prevFiles => [...prevFiles, ...newFiles]);
       }
     },
-    [mediaItems] // Dependency on mediaItems to check for duplicates
+    [mediaItems]
   );
 
   const openMediaFileSelector = useCallback(() => {
@@ -122,47 +144,40 @@ const MediaPreviewCard = ({
 
   const removeFile = useCallback(
     (id: string) => {
-      // Find the item to be removed to revoke its object URL
       const itemToRemove = mediaItems.find((item) => item.id === id);
       if (itemToRemove) {
-        URL.revokeObjectURL(itemToRemove.objectUrl); // Revoke the object URL
+        URL.revokeObjectURL(itemToRemove.objectUrl);
       }
 
-      // Filter out the item with the given ID
       const updatedItems = mediaItems.filter((item) => item.id !== id);
       setMediaItems(updatedItems);
 
-      // Adjust preview index if the removed item was currently previewed
       if (previewIndex >= updatedItems.length) {
         setPreviewIndex(updatedItems.length > 0 ? updatedItems.length - 1 : 0);
       }
-      // If no files are left, trigger the onClose callback
+
       if (updatedItems.length === 0) {
         onClose();
       }
-
-      // Optionally update parent state
-      // setMediaFiles(updatedItems.map(item => item.file));
     },
-    [mediaItems, previewIndex, onClose] // Dependencies
+    [mediaItems, previewIndex, onClose]
   );
 
   const handleCaptionChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newCaption = e.target.value;
-      // Update the caption for the currently previewed item
+
       setMediaItems((prevItems) =>
         prevItems.map((item, idx) =>
           idx === previewIndex ? { ...item, caption: newCaption } : item
         )
       );
     },
-    [previewIndex] // Dependency on previewIndex to update the correct item
+    [previewIndex]
   );
 
   const handleEmojiClick = useCallback(
     (emoji: string) => {
-      // Append the emoji to the caption of the currently previewed item
       setMediaItems((prevItems) =>
         prevItems.map((item, idx) =>
           idx === previewIndex
@@ -171,15 +186,13 @@ const MediaPreviewCard = ({
         )
       );
     },
-    [previewIndex] // Dependency on previewIndex
+    [previewIndex]
   );
 
-  // If there are no media items, don't render the preview card
   if (mediaItems.length === 0) {
     return null;
   }
 
-  // Get the current item to preview
   const currentMediaItem = mediaItems[previewIndex];
 
   return (
@@ -194,7 +207,6 @@ const MediaPreviewCard = ({
       />
 
       <div className="bg-gray-200/50 p-1 flex justify-between items-center">
-        {/* Use the unique ID to remove the current file */}
         <Button variant="ghost" onClick={() => removeFile(currentMediaItem.id)}>
           <Trash2 />
         </Button>
@@ -227,7 +239,7 @@ const MediaPreviewCard = ({
           className="focus-visible:ring-0 focus-visible:ring-offset-0 resize-none py-5 min-h-9 bg-gray-200/90 rounded-none"
           placeholder="Caption (optional)"
           onChange={handleCaptionChange}
-          value={currentMediaItem.caption || ""} // Use caption from the current item
+          value={currentMediaItem.caption || ""}
           autoFocus
           rows={1}
         />
@@ -246,7 +258,7 @@ const MediaPreviewCard = ({
           <div className="flex space-x-2 overflow-auto">
             {mediaItems.map((item, idx) => (
               <button
-                key={item.id} // Use unique ID as the key for list rendering
+                key={item.id}
                 className={`relative rounded hover:opacity-100 border-b-[3px] transition-opacity ${
                   idx === previewIndex
                     ? "border-green-500 opacity-100"
@@ -256,12 +268,12 @@ const MediaPreviewCard = ({
               >
                 {item.file.type.startsWith("image") ? (
                   <img
-                    src={item.objectUrl} // Use objectUrl for thumbnail preview
+                    src={item.objectUrl}
                     alt={item.file.name}
                     className="size-12 object-cover"
                   />
                 ) : (
-                  <video src={item.objectUrl} className="size-12" /> // Use objectUrl for video thumbnail
+                  <video src={item.objectUrl} className="size-12" />
                 )}
               </button>
             ))}

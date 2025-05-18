@@ -221,6 +221,7 @@ const ChatContainer = () => {
         loadingHistory={isFetchingNextPage}
       />
       <MessageBar
+        user={currentUser}
         chatId={currentChat._id}
         onTypingStatusChange={handleTypingStatus}
       />
