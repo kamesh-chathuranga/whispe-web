@@ -77,7 +77,7 @@ const MessageBubble = ({
               "text-sm flex flex-col gap-1 max-w-[45%] rounded-md text-black shadow-md relative",
               isOwn ? "bg-[#d8fad0]" : "bg-white",
               message.attachment
-                ? "px-[6px] pt-1.5 pb-[1px]"
+                ? "px-[6px] pt-1.5 pb-[3px]"
                 : "px-2 py-[0.4rem] ",
               {
                 "rounded-tr-none": !hasPrevMessageFromSameUser && isOwn,
@@ -86,7 +86,9 @@ const MessageBubble = ({
             )}
           >
             {/* Attachments Display */}
-            {message.attachment && <AttachmentDisplay message={message} />}
+            {message.attachment && (
+              <AttachmentDisplay message={message} userId={userId} />
+            )}
 
             <div
               className={cn(
@@ -102,7 +104,7 @@ const MessageBubble = ({
                     (message.attachment.type === "image" ||
                       message.attachment.type === "video") &&
                     !message.content &&
-                    "absolute right-6 bottom-5 text-white z-50"
+                    "absolute right-4 bottom-5 text-white z-50"
                 )}
               >
                 <span className="pt-1 min-w-fit text-[9.5px] ">

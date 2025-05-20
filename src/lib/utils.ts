@@ -14,3 +14,8 @@ export function mapMimTypeToFileType(mimtype: string) {
     ? "audio"
     : "file";
 }
+
+export const capitalizeWord = (word: string) => {
+  if (!word) return "File";
+  return word.charAt(0).toUpperCase() + word.slice(1);
+};

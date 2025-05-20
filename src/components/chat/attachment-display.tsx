@@ -1,21 +1,27 @@
 import { useAttachmentUrl } from "@/hooks/use-chat-api";
 import { Message } from "@/types/types";
 import Image from "next/image";
-import React from "react";
+import React, { useCallback } from "react";
 import CircularProgressBar from "../custom/circular-progress-bar";
 import { Separator } from "../ui/separator";
-import { Music } from "lucide-react";
+import { File, Music } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AttachmentDisplayProps {
   message: Message;
+  userId: string;
 }
 
-const AttachmentDisplay = ({ message }: AttachmentDisplayProps) => {
+const AttachmentDisplay = ({ message, userId }: AttachmentDisplayProps) => {
   const {
     attachmentUrl: resolvedUrl,
     isLoading,
     error,
   } = useAttachmentUrl(message);
+
+  const onOpenAudio = useCallback((url: string) => {
+    window.open(url, "_blank", "noopener");
+  }, []);
 
   const displayAttachment = (url: string) => {
     if (
@@ -27,7 +33,9 @@ const AttachmentDisplay = ({ message }: AttachmentDisplayProps) => {
       return null;
     }
 
-    switch (message.attachment.type) {
+    const type = message.attachment.type;
+
+    switch (type) {
       case "image":
         return (
           <div className="relative w-80 h-44 rounded-md">
@@ -51,12 +59,21 @@ const AttachmentDisplay = ({ message }: AttachmentDisplayProps) => {
             className="max-w-full h-auto rounded-md border"
           />
         );
-      case "audio":
+      default:
         return (
-          <div className="w-80 min-h-28 rounded-md flex items-center justify-center flex-col bg-green-100">
+          <div
+            className={cn(
+              "w-80 min-h-28 rounded-md flex items-center justify-center flex-col",
+              userId !== message.sender._id ? "bg-gray-50" : "bg-green-100"
+            )}
+          >
             <div className="flex items-center gap-4 w-full p-4">
               <span>
-                <Music className="text-gray-500" size={25} />
+                {type === "audio" ? (
+                  <Music className="text-gray-500" size={25} />
+                ) : (
+                  <File className="text-gray-500" size={25} />
+                )}
               </span>
               <div className="flex flex-col min-w-0">
                 <p className="text-sm text-gray-600 truncate">
@@ -71,41 +88,21 @@ const AttachmentDisplay = ({ message }: AttachmentDisplayProps) => {
             <Separator className="w-full" />
             <div className="w-full p-4">
               <div className="flex items-center justify-center gap-1">
-                <button className="border w-1/2 py-1 rounded-sm bg-white/80">
+                <button
+                  className="border w-1/2 py-1 rounded-sm bg-white/80"
+                  onClick={() => onOpenAudio(url)}
+                >
                   Open
                 </button>
-                <button className="border w-1/2 py-1 rounded-sm bg-white/80">
+                <button
+                  className="border w-1/2 py-1 rounded-sm bg-white/80"
+                  onClick={() => onOpenAudio(url)}
+                >
                   Save as...
                 </button>
               </div>
             </div>
           </div>
-        );
-      default: // 'file'
-        return (
-          <a
-            href={url}
-            target="_blank"
-            rel="noopener noreferrer"
-            download={message.attachment.filename}
-            className="p-2 border rounded-md flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400 break-all"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 flex-shrink-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-              />
-            </svg>
-            <span>{message.attachment.filename}</span>
-          </a>
         );
     }
   };

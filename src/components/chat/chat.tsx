@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import Link from "next/link";
 import { type SingleChat } from "@/types/types";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { ImageIcon, User } from "lucide-react";
+import { capitalizeWord, cn } from "@/lib/utils";
+import { File, ImageIcon, User, Video } from "lucide-react";
 import Image from "next/image";
 import { useStore } from "@/store";
 import { formatLastMessageTime } from "@/lib/calculateTime";
@@ -82,11 +82,6 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
     };
   }, [truncateMessage]);
 
-  const capitalizeWord = useCallback((word: string) => {
-    if (!word) return "";
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  }, []);
-
   return (
     <Link
       href={`/chat/${_id}`}
@@ -120,13 +115,18 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
                   : ""}
               </span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {lastMessage && lastMessage?.sender._id === currentUser?.id && (
                 <MessageStatus status={lastMessage.status} />
               )}
-              {lastMessage?.attachment && (
-                <ImageIcon className="size-3.5 text-gray-500" />
-              )}
+              {lastMessage?.attachment &&
+                (lastMessage.attachment.type === "image" ? (
+                  <ImageIcon className="size-3.5 text-gray-500" />
+                ) : lastMessage.attachment.type === "video" ? (
+                  <Video className="size-3.5 text-gray-500" />
+                ) : (
+                  <File className="size-3.5 text-gray-500" />
+                ))}
               <p
                 className="mt-1 text-sm text-gray-500"
                 style={{ whiteSpace: "nowrap" }}

@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { Music, Plus, SendHorizonal, Trash2 } from "lucide-react";
+import { File, Music, Plus, SendHorizonal, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import EmojiPicker from "../custom/emoji-picker";
@@ -271,25 +271,26 @@ const MediaPreviewCard = ({
             className="h-full w-full object-contain mx-auto"
           />
         );
-
-      case "audio":
+      default:
         return (
           <div className="h-full w-full gap-2 flex flex-col items-center justify-center bg-gray-100 p-4">
-            <Music size={64} className="text-gray-500 mb-4" />
+            {type === "audio" ? (
+              <Music size={64} className="text-gray-500 mb-4" />
+            ) : (
+              <File size={64} className="text-gray-500 mb-4" />
+            )}
             <p
               className="text-sm font-semibold text-center w-1/2 px-2 text-gray-800 truncate"
               title={currentMediaItem.file.name}
             >
               {currentMediaItem.file.name}
             </p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-gray-600 truncate w-3/4 text-center">
               {(currentMediaItem.file.size / (1024 * 1024)).toFixed(2)} MB,{" "}
               {currentMediaItem.file.type}
             </p>
           </div>
         );
-      default:
-        break;
     }
   };
 
@@ -310,11 +311,15 @@ const MediaPreviewCard = ({
       case "audio":
         return (
           <div className="size-12 flex items-center justify-center">
-            <Music size={25} className="text-gray-500" />
+            <Music size={24} className="text-gray-500" />
           </div>
         );
       default:
-        break;
+        return (
+          <div className="size-12 flex items-center justify-center">
+            <File size={24} className="text-gray-500" />
+          </div>
+        );
     }
   };
 
