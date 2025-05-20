@@ -1,12 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
-    domains: [
-      "lh3.googleusercontent.com",
-      "media-bucket-chatter.s3.us-east-1.amazonaws.com",
-    ], // Allow Google avatars
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media-bucket-chatter.s3.us-east-1.amazonaws.com",
+        pathname: "/uploads/**",
+      },
+    ],
   },
 };
 

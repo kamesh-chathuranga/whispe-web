@@ -2,14 +2,20 @@ import { useAttachmentUrl } from "@/hooks/use-chat-api";
 import { Message } from "@/types/types";
 import Image from "next/image";
 import React from "react";
+import CircularProgressBar from "../custom/circular-progress-bar";
+import { Separator } from "../ui/separator";
+import { Music } from "lucide-react";
 
 interface AttachmentDisplayProps {
   message: Message;
 }
 
 const AttachmentDisplay = ({ message }: AttachmentDisplayProps) => {
-  const { attachmentUrl, isLoading, fetchAttachmentUrl } =
-    useAttachmentUrl(message);
+  const {
+    attachmentUrl: resolvedUrl,
+    isLoading,
+    error,
+  } = useAttachmentUrl(message);
 
   const displayAttachment = (url: string) => {
     if (
@@ -46,7 +52,35 @@ const AttachmentDisplay = ({ message }: AttachmentDisplayProps) => {
           />
         );
       case "audio":
-        return <audio src={url} controls className="w-full" />;
+        return (
+          <div className="w-80 min-h-28 rounded-md flex items-center justify-center flex-col bg-green-100">
+            <div className="flex items-center gap-4 w-full p-4">
+              <span>
+                <Music className="text-gray-500" size={25} />
+              </span>
+              <div className="flex flex-col min-w-0">
+                <p className="text-sm text-gray-600 truncate">
+                  {message.attachment.filename}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {(message.attachment.size / (1024 * 1024)).toFixed(2)} MB,{" "}
+                  {message.attachment.type}
+                </p>
+              </div>
+            </div>
+            <Separator className="w-full" />
+            <div className="w-full p-4">
+              <div className="flex items-center justify-center gap-1">
+                <button className="border w-1/2 py-1 rounded-sm bg-white/80">
+                  Open
+                </button>
+                <button className="border w-1/2 py-1 rounded-sm bg-white/80">
+                  Save as...
+                </button>
+              </div>
+            </div>
+          </div>
+        );
       default: // 'file'
         return (
           <a
@@ -76,27 +110,54 @@ const AttachmentDisplay = ({ message }: AttachmentDisplayProps) => {
     }
   };
 
-  let url;
-
-  if (message.attachment && message.attachment.url) {
-    url = message.attachment.url;
-  } else {
-    fetchAttachmentUrl();
-    url = attachmentUrl;
+  if (!message.attachment) {
+    return null;
   }
 
-  return (
-    <div className="flex flex-col gap-2 w-full shadow-md rounded-md hover:shadow-lg transition-shadow duration-200 ease-in-out">
-      {isLoading && (
-        <p className="text-xs text-gray-500">Loading attachments...</p>
-      )}
-      {!isLoading && url && displayAttachment(url)}
+  if (error) {
+    return (
+      <div className="p-2">
+        <p className="text-xs text-red-500">
+          Error loading attachment: {error.message}
+        </p>
+      </div>
+    );
+  }
 
-      {!isLoading && !url && !message.attachment && (
-        <p className="text-xs text-red-500">Could not load attachments.</p>
-      )}
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <div className="p-2">
+        <p className="text-xs text-gray-500">Loading attachment...</p>
+      </div>
+    );
+  }
+
+  if (resolvedUrl) {
+    const progress = message.attachment.uploadProgress;
+    const isStillUploading = progress ? progress < 100 && progress >= 0 : false;
+
+    return (
+      <div className="relative flex flex-col gap-2 w-full shadow-md rounded-md hover:shadow-lg transition-shadow duration-200 ease-in-out">
+        {displayAttachment(resolvedUrl)}
+        {isStillUploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-md z-10">
+            {/* The CircularProgressBar is centered here by its parent div */}
+            <CircularProgressBar progress={progress!} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (message.attachment && !resolvedUrl && !isLoading) {
+    return (
+      <div className="p-2">
+        <p className="text-xs text-red-500">Could not display attachment.</p>
+      </div>
+    );
+  }
+
+  return null;
 };
 
 export default AttachmentDisplay;

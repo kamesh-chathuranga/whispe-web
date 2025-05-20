@@ -26,14 +26,14 @@ const AttachmentDropdown = ({ setMediaFiles }: AttachmentDropdownProps) => {
     [setMediaFiles]
   );
 
-  const handleDocumentFile = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (e.target.files && e.target.files.length > 0) {
-        console.log("Selected document:", e.target.files[0]);
-      }
-    },
-    []
-  );
+  // const handleDocumentFile = useCallback(
+  //   (e: React.ChangeEvent<HTMLInputElement>) => {
+  //     if (e.target.files && e.target.files.length > 0) {
+  //       console.log("Selected document:", e.target.files[0]);
+  //     }
+  //   },
+  //   []
+  // );
 
   const openMediaFileSelector = useCallback(() => {
     mediaFileInputRef.current?.click();
@@ -57,7 +57,8 @@ const AttachmentDropdown = ({ setMediaFiles }: AttachmentDropdownProps) => {
         type="file"
         ref={documentFileInputRef}
         style={{ display: "none" }}
-        onChange={handleDocumentFile}
+        onChange={handleMediaFile}
+        multiple
       />
 
       {/* Dropdown trigger */}

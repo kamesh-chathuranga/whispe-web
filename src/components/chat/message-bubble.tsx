@@ -76,7 +76,9 @@ const MessageBubble = ({
             className={cn(
               "text-sm flex flex-col gap-1 max-w-[45%] rounded-md text-black shadow-md relative",
               isOwn ? "bg-[#d8fad0]" : "bg-white",
-              message.attachment ? "px-[5px] py-1" : "px-2 py-[0.4rem] ",
+              message.attachment
+                ? "px-[6px] pt-1.5 pb-[1px]"
+                : "px-2 py-[0.4rem] ",
               {
                 "rounded-tr-none": !hasPrevMessageFromSameUser && isOwn,
                 "rounded-tl-none": !hasPrevMessageFromSameUser && !isOwn,
@@ -97,6 +99,8 @@ const MessageBubble = ({
                 className={cn(
                   "flex gap-1 self-end items-center -mb-[6px] -mr-[2px] min-w-fit text-message-time",
                   message.attachment &&
+                    (message.attachment.type === "image" ||
+                      message.attachment.type === "video") &&
                     !message.content &&
                     "absolute right-6 bottom-5 text-white z-50"
                 )}

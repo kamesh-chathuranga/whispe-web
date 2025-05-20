@@ -78,7 +78,9 @@ interface AttachmentResponse {
 }
 
 async function fetchAttachmentUrl(chatId: string, messageId: string) {
-  if (!chatId || !messageId) return;
+  if (!chatId || !messageId) {
+    throw new Error("Chat ID and Message ID are required");
+  }
 
   try {
     const { data } = await API.get<AttachmentResponse>(
@@ -96,18 +98,25 @@ async function fetchAttachmentUrl(chatId: string, messageId: string) {
 }
 
 export function useAttachmentUrl(message: Message) {
-  const { chat: chatId, _id: messageId } = message;
+  const { chat: chatId, _id: messageId, attachment } = message;
+  const hasPredefinedUrl = !!attachment?.url;
 
   const query = useQuery({
     queryKey: ["attachmentUrl", chatId, messageId],
-    queryFn: () => fetchAttachmentUrl(chatId!, messageId!),
-    enabled: false,
+    queryFn: () => {
+      if (!chatId || !messageId) {
+        return Promise.resolve(undefined);
+      }
+      return fetchAttachmentUrl(chatId, messageId);
+    },
+
+    enabled: !hasPredefinedUrl && !!chatId && !!messageId,
     retry: false,
   });
 
   return {
-    attachmentUrl: query.data?.url,
-    isLoading: query.isLoading,
+    attachmentUrl: hasPredefinedUrl ? attachment!.url : query.data?.url,
+    isLoading: query.isLoading && !hasPredefinedUrl,
     error: query.error,
     fetchAttachmentUrl: query.refetch,
   };

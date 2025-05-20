@@ -175,7 +175,7 @@ const useMediaCall = () => {
         }
       );
 
-      router.push("/dashboard/calls");
+      router.push("/calls");
     },
     [
       chat,
@@ -196,7 +196,7 @@ const useMediaCall = () => {
         ...incomingCall,
         isRinging: false,
       });
-      router.push("/dashboard/calls");
+      router.push("/calls");
 
       const stream = await getMediaStream(callType);
 

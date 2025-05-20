@@ -1,6 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { Plus, SendHorizonal, Trash2 } from "lucide-react";
+import { Music, Plus, SendHorizonal, Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import EmojiPicker from "../custom/emoji-picker";
@@ -9,7 +8,10 @@ import mediaUploader from "@/lib/mediaUploader";
 import { useStore } from "@/store";
 import { v4 as uuidv4 } from "uuid";
 import { Attachment, Message, Person } from "@/types/types";
-import useUpdateMessages from "@/hooks/use-message";
+import useMessageMutation from "@/hooks/use-message";
+import { AxiosProgressEvent } from "axios";
+import { mapMimTypeToFileType } from "@/lib/utils";
+import Image from "next/image";
 
 interface MediaItem {
   id: string;
@@ -30,9 +32,9 @@ const MediaPreviewCard = ({
   onClose,
 }: MediaPreviewCardProps) => {
   const { currentChat, currentUser } = useStore();
-  const { updateMessage } = useUpdateMessages();
-  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const { addNewMessage, updateMessage } = useMessageMutation();
   const [previewIndex, setPreviewIndex] = useState(0);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
 
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,13 +63,13 @@ const MediaPreviewCard = ({
     setMediaItems([]);
     setPreviewIndex(0);
     onClose();
+    mediaItems.forEach((item) => URL.revokeObjectURL(item.objectUrl));
 
-    // itemsToRevoke.forEach((item) => URL.revokeObjectURL(item.objectUrl));
+    const uploadTasks = itemsToProcess.map(async (item) => {
+      const tempId = uuidv4();
 
-    for (const item of itemsToProcess) {
-      const temporaryMessageId = uuidv4();
-      const temporaryMessage: Message = {
-        _id: temporaryMessageId,
+      const tempMessage: Message = {
+        _id: tempId,
         chat: currentChat._id,
         sender: {
           _id: currentUser?.id,
@@ -80,40 +82,93 @@ const MediaPreviewCard = ({
           filename: item.file.name,
           mimeType: item.file.type,
           size: item.file.size,
-          type: item.file.type.startsWith("image")
-            ? "image"
-            : item.file.type.startsWith("video")
-            ? "video"
-            : item.file.type.startsWith("audio")
-            ? "audio"
-            : "file",
+          type: mapMimTypeToFileType(item.file.type),
           objectKey: "",
+          uploadProgress: 0,
         } as Attachment,
         status: "pending",
         createdAt: new Date().toISOString(),
       };
 
-      updateMessage(temporaryMessage);
+      addNewMessage(tempMessage);
+
       try {
-        const attachment = await mediaUploader(item.file, currentChat?._id);
-        onMessageSend(
+        const onProgress = (progressEvent: AxiosProgressEvent) => {
+          if (progressEvent.total) {
+            const progress = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+
+            updateMessage(tempId, {
+              ...tempMessage,
+              attachment: {
+                ...tempMessage.attachment,
+                uploadProgress: progress,
+              } as Attachment,
+            });
+          }
+        };
+
+        const attachmentDetails = await mediaUploader(
+          item.file,
           currentChat._id,
-          item.caption || "",
-          temporaryMessageId,
-          attachment
+          onProgress
         );
+
+        return { item, tempId, attachmentDetails, error: null, tempMessage };
       } catch (error) {
         console.log("Error uploading or sending message:", error);
+
+        updateMessage(tempId, {
+          ...tempMessage,
+          status: "failed",
+          attachment: {
+            ...tempMessage.attachment,
+            uploadProgress: -1,
+          } as Attachment,
+        });
+
+        return { item, tempId, attachmentDetails: null, error, tempMessage };
+      }
+    });
+
+    const uploadResults = await Promise.all(uploadTasks);
+
+    for (const result of uploadResults) {
+      if (result.attachmentDetails && !result.error) {
+        try {
+          onMessageSend(
+            currentChat._id,
+            result.item.caption || "",
+            result.tempId,
+            result.attachmentDetails
+          );
+        } catch (sendError) {
+          console.log(
+            `Error sending message for ${result.item.file.name}:`,
+            sendError
+          );
+
+          updateMessage(result.tempId, {
+            ...result.tempMessage,
+            status: "failed",
+            attachment: {
+              ...result.tempMessage.attachment,
+              uploadProgress: -1,
+            } as Attachment,
+          });
+        }
       }
     }
   }, [
     mediaItems,
     currentChat,
-    onClose,
     currentUser?.id,
     currentUser?.name,
     currentUser?.avatarUrl,
+    addNewMessage,
     updateMessage,
+    onClose,
   ]);
 
   const handleMediaFile = useCallback(
@@ -195,6 +250,76 @@ const MediaPreviewCard = ({
 
   const currentMediaItem = mediaItems[previewIndex];
 
+  const displayMediaPreview = (type: Attachment["type"]) => {
+    switch (type) {
+      case "image":
+        return (
+          <Image
+            src={currentMediaItem.objectUrl}
+            alt={currentMediaItem.file.name}
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            className="h-full w-full object-contain mx-auto"
+          />
+        );
+
+      case "video":
+        return (
+          <video
+            src={currentMediaItem.objectUrl}
+            controls
+            className="h-full w-full object-contain mx-auto"
+          />
+        );
+
+      case "audio":
+        return (
+          <div className="h-full w-full gap-2 flex flex-col items-center justify-center bg-gray-100 p-4">
+            <Music size={64} className="text-gray-500 mb-4" />
+            <p
+              className="text-sm font-semibold text-center w-1/2 px-2 text-gray-800 truncate"
+              title={currentMediaItem.file.name}
+            >
+              {currentMediaItem.file.name}
+            </p>
+            <p className="text-xs text-gray-600">
+              {(currentMediaItem.file.size / (1024 * 1024)).toFixed(2)} MB,{" "}
+              {currentMediaItem.file.type}
+            </p>
+          </div>
+        );
+      default:
+        break;
+    }
+  };
+
+  const displayThumbnail = (type: Attachment["type"], item: MediaItem) => {
+    switch (type) {
+      case "image":
+        return (
+          <Image
+            src={item.objectUrl}
+            alt={item.file.name}
+            className="size-12 object-cover"
+            width={48}
+            height={48}
+          />
+        );
+      case "video":
+        return <video src={item.objectUrl} className="size-12" />;
+      case "audio":
+        return (
+          <div className="size-12 flex items-center justify-center">
+            <Music size={25} className="text-gray-500" />
+          </div>
+        );
+      default:
+        break;
+    }
+  };
+
+  const fileType = mapMimTypeToFileType(currentMediaItem.file.type);
+
   return (
     <div className="border rounded-lg shadow-md absolute backdrop-blur-xl bottom-2 left-2 z-50">
       <input
@@ -202,7 +327,6 @@ const MediaPreviewCard = ({
         ref={mediaFileInputRef}
         style={{ display: "none" }}
         onChange={handleMediaFile}
-        accept="image/*,video/*"
         multiple
       />
 
@@ -212,21 +336,8 @@ const MediaPreviewCard = ({
         </Button>
       </div>
 
-      <div className="w-[35rem] h-[18rem]">
-        {/* Main Preview - Use the objectUrl from the state */}
-        {currentMediaItem.file.type.startsWith("image") ? (
-          <img
-            src={currentMediaItem.objectUrl}
-            alt={currentMediaItem.file.name}
-            className="h-full w-full object-contain mx-auto"
-          />
-        ) : (
-          <video
-            src={currentMediaItem.objectUrl}
-            controls
-            className="h-full w-full object-contain mx-auto"
-          />
-        )}
+      <div className="w-[35rem] h-[18rem] relative">
+        {displayMediaPreview(fileType)}
       </div>
 
       <div className="flex bg-gray-200/90 items-center">
@@ -254,29 +365,25 @@ const MediaPreviewCard = ({
           <Plus color="black" />
         </Button>
 
-        {mediaItems.length > 0 && (
+        {mediaItems.length > 1 && (
           <div className="flex space-x-2 overflow-auto">
-            {mediaItems.map((item, idx) => (
-              <button
-                key={item.id}
-                className={`relative rounded hover:opacity-100 border-b-[3px] transition-opacity ${
-                  idx === previewIndex
-                    ? "border-green-500 opacity-100"
-                    : "opacity-50 border-b-transparent"
-                }`}
-                onClick={() => setPreviewIndex(idx)}
-              >
-                {item.file.type.startsWith("image") ? (
-                  <img
-                    src={item.objectUrl}
-                    alt={item.file.name}
-                    className="size-12 object-cover"
-                  />
-                ) : (
-                  <video src={item.objectUrl} className="size-12" />
-                )}
-              </button>
-            ))}
+            {mediaItems.map((item, idx) => {
+              const fileType = mapMimTypeToFileType(item.file.type);
+
+              return (
+                <button
+                  key={item.id}
+                  className={`relative rounded hover:opacity-100 border-b-[3px] transition-opacity ${
+                    idx === previewIndex
+                      ? "border-green-500 opacity-100"
+                      : "opacity-50 border-b-transparent"
+                  }`}
+                  onClick={() => setPreviewIndex(idx)}
+                >
+                  {displayThumbnail(fileType, item)}
+                </button>
+              );
+            })}
           </div>
         )}
 

@@ -43,6 +43,7 @@ export interface Attachment {
   size: number;
   mimeType: string;
   duration?: number;
+  uploadProgress?: number;
 }
 
 export interface Message {

@@ -3,7 +3,7 @@ import ProfileCardContainer from "@/components/dashboard/profile-card-container"
 import SentRequestCardContainer from "@/components/dashboard/sent-request-card-container";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-export default function TabsDemo() {
+export default function FriendsPage() {
   return (
     <Tabs defaultValue="friend-request-tab" className="w-full h-full p-4">
       <TabsList className="grid grid-cols-3 w-fit rounded-full">

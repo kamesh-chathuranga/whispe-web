@@ -44,7 +44,7 @@ const MessageBar = ({
     [onTypingStatusChange]
   );
 
-  const sendMessage = useCallback(() => {
+  const handleSendMessage = useCallback(() => {
     const tempId = uuidv4();
     const newMessage: Message = {
       _id: tempId,
@@ -67,10 +67,10 @@ const MessageBar = ({
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === "Enter" && !e.shiftKey && message.trim()) {
         e.preventDefault();
-        sendMessage();
+        handleSendMessage();
       }
     },
-    [message, sendMessage]
+    [message, handleSendMessage]
   );
 
   return (
@@ -105,7 +105,7 @@ const MessageBar = ({
           />
 
           {message ? (
-            <Button variant="ghost" onClick={sendMessage}>
+            <Button variant="ghost" onClick={handleSendMessage}>
               <SendHorizonal />
             </Button>
           ) : (

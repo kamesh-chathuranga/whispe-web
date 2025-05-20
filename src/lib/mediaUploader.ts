@@ -1,9 +1,11 @@
 import API from "@/lib/axios";
 import { Attachment, MediaUploadResponse } from "@/types/types";
+import { AxiosProgressEvent } from "axios";
 
 const mediaUploader = async (
   file: File,
-  chatId: string
+  chatId: string,
+  onUploadProgress: (progressEvent: AxiosProgressEvent) => void
 ): Promise<Attachment | undefined> => {
   try {
     const {
@@ -14,8 +16,9 @@ const mediaUploader = async (
       size: file.size,
     });
 
-    API.put(url, file, {
+    await API.put(url, file, {
       headers: { "Content-Type": type },
+      onUploadProgress,
     });
 
     return {
@@ -27,6 +30,7 @@ const mediaUploader = async (
     };
   } catch (error) {
     console.log("Error uploading media files:", error);
+    return undefined;
   }
 };
 
