@@ -31,6 +31,8 @@ import { SignalData } from "simple-peer";
 import useVideoCall from "@/hooks/use-media-call";
 import LogoutButton from "../custom/logout-button";
 import useMessageMutation from "@/hooks/use-message";
+import { InfiniteData, useQueryClient } from "@tanstack/react-query";
+import { MessagesResponse } from "@/hooks/use-chat-api";
 
 const sideBarData = [
   {
@@ -99,27 +101,7 @@ const SideBar = () => {
   const { addNewMessage, updateMessage } = useMessageMutation();
   const { createPeerConnection, handleHangUp } = useVideoCall();
 
-  useEffect(() => {
-    socket.on("friends:status", (friendStatuses: FriendStatus[]) => {
-      setFriendStatuses(friendStatuses);
-    });
-
-    socket.on("friend:status", (status: FriendStatus) => {
-      const updatedStatuses = friendStatuses.map((friend: FriendStatus) => {
-        if (friend.userId === status.userId) {
-          return status;
-        }
-        return friend;
-      });
-
-      setFriendStatuses(updatedStatuses);
-    });
-
-    return () => {
-      socket.off("friends:status");
-      socket.off("friend:status");
-    };
-  }, [friendStatuses, setFriendStatuses]);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!socket || !currentUser?.id) return;
@@ -128,30 +110,6 @@ const SideBar = () => {
       socket.emit("join:chat", chat._id, (res: any) => {
         if (res.status !== 200) console.log(res.error);
       });
-    });
-
-    socket.on("friendRequest:received", (request) => {
-      const shouldNotified = pathName !== "/friends";
-      const newRequest: ReceivedFriendRequest = {
-        id: request._id,
-        senderName: request.sender.name,
-        senderImageUrl: request.sender?.avatarUrl,
-      };
-      setFriendRequests([...friendRequests, newRequest]);
-
-      if (!shouldNotified) return;
-      toast.custom(
-        (t) => (
-          <Notification
-            t={t}
-            url="/friends"
-            senderName={newRequest.senderName}
-            image={newRequest.senderImageUrl}
-            message="Sent a friend request"
-          />
-        ),
-        { position: "top-center" }
-      );
     });
 
     socket.on(
@@ -193,19 +151,147 @@ const SideBar = () => {
       }
     );
 
+    socket.on(
+      "message:status",
+      ({
+        messageId,
+        status,
+        chatId,
+      }: {
+        messageId: string;
+        status: string;
+        chatId: string;
+      }) => {
+        queryClient.setQueryData(
+          ["messages", chatId],
+          (oldData: InfiniteData<MessagesResponse> | undefined) => {
+            if (!oldData) return undefined;
+            return {
+              ...oldData,
+              pages: oldData.pages.map((page) => ({
+                ...page,
+                messages: page.messages.map((message) =>
+                  message._id === messageId ? { ...message, status } : message
+                ),
+              })),
+            };
+          }
+        );
+
+        const updatedChats = chatList.map((chatItem) => {
+          if (
+            chatItem._id === chatId &&
+            chatItem.lastMessage &&
+            chatItem.lastMessage._id === messageId
+          ) {
+            return {
+              ...chatItem,
+              lastMessage: {
+                ...chatItem.lastMessage,
+                status: status as Message["status"],
+              },
+            };
+          }
+
+          return chatItem;
+        });
+        setChatList(updatedChats);
+      }
+    );
+
     return () => {
-      socket.off("friendRequest:received");
       socket.off("message:new");
+      socket.off("message:status");
     };
   }, [
     addNewMessage,
+    chatList,
+    currentUser?.id,
+    pathName,
+    queryClient,
+    setChatList,
+    updateMessage,
+  ]);
+
+  useEffect(() => {
+    socket.on("friends:status", (friendStatuses: FriendStatus[]) => {
+      setFriendStatuses(friendStatuses);
+    });
+
+    socket.on("friend:status", (status: FriendStatus) => {
+      const updatedStatuses = friendStatuses.map((friend: FriendStatus) => {
+        if (friend.userId === status.userId) {
+          return status;
+        }
+        return friend;
+      });
+
+      setFriendStatuses(updatedStatuses);
+    });
+
+    return () => {
+      socket.off("friends:status");
+      socket.off("friend:status");
+    };
+  }, [friendStatuses, setFriendStatuses]);
+
+  useEffect(() => {
+    if (!socket || !currentUser?.id) return;
+
+    socket.on("friendRequest:accepted", (chat) => {
+      const shouldNotified = chat.acceptBy !== currentUser.id;
+      setChatList([...chatList, chat]);
+
+      if (!shouldNotified) return;
+      toast.custom(
+        (t) => (
+          <Notification
+            t={t}
+            url={`/chat/${chat._id}`}
+            senderName={chat.partner.name}
+            image={chat.partner.avatarUrl}
+            message="Accept your friend request"
+          />
+        ),
+        { position: "top-center" }
+      );
+    });
+
+    socket.on("friendRequest:received", (request) => {
+      const shouldNotified = pathName !== "/friends";
+      const newRequest: ReceivedFriendRequest = {
+        id: request._id,
+        senderName: request.sender.name,
+        senderImageUrl: request.sender?.avatarUrl,
+      };
+      setFriendRequests([...friendRequests, newRequest]);
+
+      if (!shouldNotified) return;
+      toast.custom(
+        (t) => (
+          <Notification
+            t={t}
+            url="/friends"
+            senderName={newRequest.senderName}
+            image={newRequest.senderImageUrl}
+            message="Sent a friend request"
+          />
+        ),
+        { position: "top-center" }
+      );
+    });
+
+    return () => {
+      socket.off("friendRequest:accepted");
+      socket.off("friendRequest:received");
+    };
+  }, [
     chatList,
     currentUser?.id,
     friendRequests,
     pathName,
     setChatList,
     setFriendRequests,
-    updateMessage,
   ]);
 
   useEffect(() => {

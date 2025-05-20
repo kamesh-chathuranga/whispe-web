@@ -3,9 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { ScrollArea } from "../ui/scroll-area";
 import { useStore } from "@/store";
-import socket from "@/lib/socket";
 import toast from "react-hot-toast";
-import Notification from "../custom/notification";
 import API from "@/lib/axios";
 import { AxiosError } from "axios";
 import Chat from "./chat";
@@ -35,33 +33,6 @@ const ChatList = ({ searchQuery }: ChatListProps) => {
       }
     })();
   }, [currentUser?.id, setChatList]);
-
-  useEffect(() => {
-    if (!socket || !currentUser?.id) return;
-
-    socket.on("friendRequest:accepted", (chat) => {
-      const shouldNotified = chat.acceptBy !== currentUser.id;
-      setChatList([...chatList, chat]);
-
-      if (!shouldNotified) return;
-      toast.custom(
-        (t) => (
-          <Notification
-            t={t}
-            url={`/chat/${chat._id}`}
-            senderName={chat.partner.name}
-            image={chat.partner.avatarUrl}
-            message="Accept your friend request"
-          />
-        ),
-        { position: "top-center" }
-      );
-    });
-
-    return () => {
-      socket.off("friendRequest:accepted");
-    };
-  }, [chatList, currentUser?.id, setChatList]);
 
   const filteredChatList = chatList.filter((chat) => {
     if (!searchQuery.trim()) return true;

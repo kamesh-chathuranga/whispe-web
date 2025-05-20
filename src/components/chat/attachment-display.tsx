@@ -56,7 +56,7 @@ const AttachmentDisplay = ({ message, userId }: AttachmentDisplayProps) => {
           <video
             src={url}
             controls
-            className="max-w-full h-auto rounded-md border"
+            className="w-80 h-44 rounded-md border"
           />
         );
       default:
@@ -123,7 +123,7 @@ const AttachmentDisplay = ({ message, userId }: AttachmentDisplayProps) => {
 
   if (isLoading) {
     return (
-      <div className="p-2">
+      <div className="p-2 w-80 h-32">
         <p className="text-xs text-gray-500">Loading attachment...</p>
       </div>
     );
@@ -138,7 +138,6 @@ const AttachmentDisplay = ({ message, userId }: AttachmentDisplayProps) => {
         {displayAttachment(resolvedUrl)}
         {isStillUploading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-md z-10">
-            {/* The CircularProgressBar is centered here by its parent div */}
             <CircularProgressBar progress={progress!} />
           </div>
         )}

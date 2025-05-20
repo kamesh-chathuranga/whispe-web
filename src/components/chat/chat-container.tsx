@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useQueryClient, InfiniteData } from "@tanstack/react-query";
-import { MessagesResponse, useGetUserChatMessages } from "@/hooks/use-chat-api";
+import { useGetUserChatMessages } from "@/hooks/use-chat-api";
 import { useStore } from "@/store";
 import socket from "@/lib/socket";
 import ChatHeader from "./chat-header";
@@ -11,7 +10,6 @@ import MessageContainer from "./message-container";
 
 const ChatContainer = () => {
   const { currentChat, currentUser } = useStore();
-  const queryClient = useQueryClient();
   const chatId = currentChat?._id;
 
   const {
@@ -70,41 +68,15 @@ const ChatContainer = () => {
 
     const handleTyping = () => setIsTyping(true);
     const handleStopTyping = () => setIsTyping(false);
-    const handleMessageStatus = ({
-      messageId,
-      status,
-    }: {
-      messageId: string;
-      status: string;
-    }) => {
-      queryClient.setQueryData(
-        ["messages", chatId],
-        (oldData: InfiniteData<MessagesResponse> | undefined) => {
-          if (!oldData) return undefined;
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              messages: page.messages.map((message) =>
-                message._id === messageId ? { ...message, status } : message
-              ),
-            })),
-          };
-          return;
-        }
-      );
-    };
 
     socket.on("typing", handleTyping);
     socket.on("typing:stop", handleStopTyping);
-    socket.on("message:status", handleMessageStatus);
 
     return () => {
       socket.off("typing", handleTyping);
       socket.off("typing:stop", handleStopTyping);
-      socket.off("message:status", handleMessageStatus);
     };
-  }, [chatId, queryClient]);
+  }, [chatId]);
 
   // Scroll Management: Initial scroll & new messages
   useEffect(() => {

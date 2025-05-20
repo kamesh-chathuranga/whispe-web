@@ -15,7 +15,7 @@ const socket = io(process.env.NEXT_PUBLIC_API_BASE_HOST!, {
 
 socket.on("connect_error", async (err) => {
   console.log("Socket auth error:", err.message);
-  if (err.message === "Authentication error") {
+  if (err.message === "AUTHENTICATION_ERROR") {
     try {
       await API.post("/auth/refresh");
       socket.connect();

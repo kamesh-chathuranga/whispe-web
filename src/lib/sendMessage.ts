@@ -19,11 +19,9 @@ export const onMessageSend = (
     "message:send",
     { chatId, content: message, tempId, attachment },
     (res: SendMessageResponse) => {
-      if (res.status === 201 && res.data) {
+      if (res.status === 201 && res.data && res.data.status === "pending") {
         socket.emit("message:sent", { messageId: res.data._id });
-      } else {
-        console.log(res.error);
-        // socket.emit("message:failed", { messageId: res.data._id });
+        return;
       }
     }
   );
