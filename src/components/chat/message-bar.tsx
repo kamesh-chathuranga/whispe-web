@@ -76,10 +76,7 @@ const MessageBar = ({
   return (
     <div className="flex items-center p-3 h-[10%] relative border-t border-gray-200 gap-1">
       {showAudioRec ? (
-        <AudioRecorder
-          showAudioRecorderHandler={setShowAudioRec}
-          startRecordingOnMount={true}
-        />
+        <AudioRecorder showAudioRecorderHandler={setShowAudioRec} />
       ) : (
         <>
           <EmojiPicker onEmojiClick={addEmoji} />
