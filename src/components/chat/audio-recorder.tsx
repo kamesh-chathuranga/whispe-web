@@ -6,14 +6,19 @@ import React, {
   useState,
 } from "react";
 
-import axios from "axios";
+import { AxiosProgressEvent } from "axios";
 import WaveSurfer from "wavesurfer.js";
 import RecordPlugin from "wavesurfer.js/dist/plugins/record.esm.js";
-import socket from "@/lib/socket";
 import { Trash2, Mic, Play, Pause, SendHorizonal } from "lucide-react";
 import { useStore } from "@/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { v4 as uuidv4 } from "uuid";
+import { Attachment, Message, Person } from "@/types/types";
+import useMessageMutation from "@/hooks/use-message";
+import mediaUploader from "@/lib/mediaUploader";
+import { onMessageSend } from "@/lib/sendMessage";
+import { formatTime } from "@/lib/calculateTime";
 
 interface AudioRecorderProps {
   showAudioRecorderHandler: React.Dispatch<React.SetStateAction<boolean>>;
@@ -21,6 +26,7 @@ interface AudioRecorderProps {
 
 const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
   const { currentUser, currentChat } = useStore();
+  const { addNewMessage, updateMessage } = useMessageMutation();
 
   const [isCapturingSegment, setIsCapturingSegment] = useState(false);
   const [isPausedAwaitingResume, setIsPausedAwaitingResume] = useState(false);
@@ -30,10 +36,12 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
 
   const [audioSegments, setAudioSegments] = useState<File[]>([]);
   const [renderedAudio, setRenderedAudio] = useState<File | null>(null);
+  const [currentObjectUrl, setCurrentObjectUrl] = useState<string | null>(null);
 
   const [currentSegmentDuration, setCurrentSegmentDuration] = useState(0);
   const [totalAccumulatedRecordingTime, setTotalAccumulatedRecordingTime] =
     useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(0);
@@ -91,9 +99,16 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
         const combined = combineSegments(updatedSegments);
         if (combined) {
           setRenderedAudio(combined);
+
           if (wsInstance) {
-            const objectURL = URL.createObjectURL(combined);
-            wsInstance.load(objectURL);
+            setCurrentObjectUrl((prevUrl) => {
+              if (prevUrl) {
+                URL.revokeObjectURL(prevUrl);
+              }
+              const newObjectURL = URL.createObjectURL(combined);
+              wsInstance.load(newObjectURL);
+              return newObjectURL;
+            });
           }
         }
         return updatedSegments;
@@ -113,11 +128,23 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
       setTotalDuration(duration);
       setCurrentPlaybackTime(0);
     });
-    wsInstance.on("destroy", () => {});
+    wsInstance.on("destroy", () => {
+      setCurrentObjectUrl((prevUrl) => {
+        if (prevUrl) {
+          URL.revokeObjectURL(prevUrl);
+        }
+        return null;
+      });
+    });
 
     return () => {
-      recInstance.destroy();
-      wsInstance.destroy();
+      if (recInstance) {
+        recInstance.destroy();
+      }
+      if (wsInstance) {
+        wsInstance.destroy();
+      }
+
       setRecordPlugin(null);
       setWaveForm(null);
     };
@@ -133,6 +160,14 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
     if (audioSegments.length === 0) {
       setRenderedAudio(null);
       if (waveForm) waveForm.empty();
+
+      setCurrentObjectUrl((prevUrl) => {
+        if (prevUrl) {
+          URL.revokeObjectURL(prevUrl);
+        }
+        return null;
+      });
+
       setTotalAccumulatedRecordingTime(0);
       setTotalDuration(0);
       setCurrentPlaybackTime(0);
@@ -144,7 +179,7 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
       console.log("Error starting segment recording:", err);
       setIsCapturingSegment(false);
     }
-  }, [recordPlugin, waveForm, isCapturingSegment, audioSegments]);
+  }, [recordPlugin, waveForm, isCapturingSegment, audioSegments.length]);
 
   useEffect(() => {
     if (
@@ -210,31 +245,87 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
   }, [waveForm]);
 
   const sendRecordedAudio = useCallback(async () => {
-    if (!renderedAudio || audioSegments.length === 0 || isCapturingSegment) {
-      console.log(
-        "Cannot send: No audio, segments empty, or currently capturing."
-      );
+    if (
+      !renderedAudio ||
+      audioSegments.length === 0 ||
+      isCapturingSegment ||
+      !currentUser ||
+      !currentChat
+    ) {
       return;
     }
 
-    try {
-      const formData = new FormData();
-      formData.append("audio", renderedAudio);
-      const response = await axios.post("/api/upload-audio", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        params: { from: currentUser?.id, to: currentChat?._id },
-      });
+    const tempId = uuidv4();
 
-      if (response.status === 200 || response.status === 201) {
-        socket.emit("send-message", {
-          from: currentUser?.id,
-          to: currentChat?._id,
-          message: response.data,
+    const tempMessage: Message = {
+      _id: tempId,
+      chat: currentChat._id,
+      sender: {
+        _id: currentUser?.id,
+        name: currentUser?.name,
+        avatarUrl: currentUser?.avatarUrl,
+      } as Person,
+      content: "",
+      attachment: {
+        url: currentObjectUrl,
+        filename: renderedAudio.name,
+        mimeType: renderedAudio.type,
+        size: renderedAudio.size,
+        type: "voice",
+        objectKey: "",
+        uploadProgress: 0,
+        duration: Math.round(totalDuration),
+      } as Attachment,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    addNewMessage(tempMessage);
+
+    try {
+      setIsLoading(true);
+
+      const onProgress = (progressEvent: AxiosProgressEvent) => {
+        if (progressEvent.total) {
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+
+          updateMessage(tempId, {
+            ...tempMessage,
+            attachment: {
+              ...tempMessage.attachment,
+              uploadProgress: progress,
+            } as Attachment,
+          });
+        }
+      };
+
+      const attachmentDetails = await mediaUploader(
+        renderedAudio,
+        currentChat._id,
+        onProgress
+      );
+
+      if (attachmentDetails) {
+        onMessageSend(currentChat._id, "", tempId, {
+          ...attachmentDetails,
+          type: "voice",
+          duration: tempMessage.attachment?.duration,
         });
+
         showAudioRecorderHandler(false);
         // Reset all states
         setAudioSegments([]);
         setRenderedAudio(null);
+
+        setCurrentObjectUrl((prevUrl) => {
+          if (prevUrl) {
+            URL.revokeObjectURL(prevUrl);
+          }
+          return null;
+        });
+
         setCurrentSegmentDuration(0);
         setTotalAccumulatedRecordingTime(0);
         if (waveForm) waveForm.empty();
@@ -246,23 +337,30 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
       }
     } catch (error) {
       console.log("Error sending audio", error);
+      updateMessage(tempId, {
+        ...tempMessage,
+        status: "failed",
+        attachment: {
+          ...tempMessage.attachment,
+          uploadProgress: -1,
+        } as Attachment,
+      });
+    } finally {
+      setIsLoading(false);
     }
   }, [
+    addNewMessage,
     audioSegments.length,
-    currentChat?._id,
-    currentUser?.id,
+    currentChat,
+    currentObjectUrl,
+    currentUser,
     isCapturingSegment,
     renderedAudio,
     showAudioRecorderHandler,
+    totalDuration,
+    updateMessage,
     waveForm,
   ]);
-
-  const formatTime = useCallback((time: number) => {
-    if (isNaN(time) || time === Infinity || time < 0) return "0:00";
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  }, []);
 
   const handleDeleteAudio = useCallback(() => {
     if (isCapturingSegment) {
@@ -276,6 +374,14 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
     setIsPausedAwaitingResume(false);
     setAudioSegments([]);
     setRenderedAudio(null);
+
+    setCurrentObjectUrl((prevUrl) => {
+      if (prevUrl) {
+        URL.revokeObjectURL(prevUrl);
+      }
+      return null;
+    });
+
     if (waveForm) waveForm.empty();
     setCurrentSegmentDuration(0);
     setTotalAccumulatedRecordingTime(0);
@@ -420,7 +526,10 @@ const AudioRecorder = ({ showAudioRecorderHandler }: AudioRecorderProps) => {
         size="icon"
         onClick={sendRecordedAudio}
         disabled={
-          !renderedAudio || audioSegments.length === 0 || isCapturingSegment
+          !renderedAudio ||
+          audioSegments.length === 0 ||
+          isCapturingSegment ||
+          isLoading
         }
         title="Send Recording"
       >

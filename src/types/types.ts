@@ -38,7 +38,7 @@ export interface SingleChat {
 export interface Attachment {
   url?: string;
   objectKey: string;
-  type: "image" | "audio" | "video" | "file";
+  type: "image" | "audio" | "video" | "file" | "voice";
   filename: string;
   size: number;
   mimeType: string;

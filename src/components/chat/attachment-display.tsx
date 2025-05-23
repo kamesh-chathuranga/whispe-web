@@ -6,6 +6,7 @@ import CircularProgressBar from "../custom/circular-progress-bar";
 import { Separator } from "../ui/separator";
 import { File, Music } from "lucide-react";
 import { cn } from "@/lib/utils";
+import VoiceMessagePlayer from "./voice-message-player";
 
 interface AttachmentDisplayProps {
   message: Message;
@@ -53,12 +54,10 @@ const AttachmentDisplay = ({ message, userId }: AttachmentDisplayProps) => {
         );
       case "video":
         return (
-          <video
-            src={url}
-            controls
-            className="w-80 h-44 rounded-md border"
-          />
+          <video src={url} controls className="w-80 h-44 rounded-md border" />
         );
+      case "voice":
+        return <VoiceMessagePlayer audioUrl={url} sender={message.sender} />;
       default:
         return (
           <div
@@ -134,7 +133,12 @@ const AttachmentDisplay = ({ message, userId }: AttachmentDisplayProps) => {
     const isStillUploading = progress ? progress < 100 && progress >= 0 : false;
 
     return (
-      <div className="relative flex flex-col gap-2 w-full shadow-md rounded-md hover:shadow-lg transition-shadow duration-200 ease-in-out">
+      <div
+        className={cn(`relative flex flex-col gap-2 w-full`, {
+          "shadow-md rounded-md hover:shadow-lg transition-shadow duration-200 ease-in-out":
+            message.attachment.type !== "voice",
+        })}
+      >
         {displayAttachment(resolvedUrl)}
         {isStillUploading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-md z-10">

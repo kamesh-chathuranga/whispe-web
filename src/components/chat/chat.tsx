@@ -5,10 +5,10 @@ import Link from "next/link";
 import { type SingleChat } from "@/types/types";
 import { usePathname } from "next/navigation";
 import { capitalizeWord, cn } from "@/lib/utils";
-import { File, ImageIcon, User, Video } from "lucide-react";
+import { File, ImageIcon, Mic, User, Video } from "lucide-react";
 import Image from "next/image";
 import { useStore } from "@/store";
-import { formatLastMessageTime } from "@/lib/calculateTime";
+import { formatLastMessageTime, formatTime } from "@/lib/calculateTime";
 import MessageStatus from "./message-status";
 
 const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
@@ -124,6 +124,8 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
                   <ImageIcon className="size-3.5 text-gray-500" />
                 ) : lastMessage.attachment.type === "video" ? (
                   <Video className="size-3.5 text-gray-500" />
+                ) : lastMessage.attachment.type === "voice" ? (
+                  <Mic className="size-3.5 text-gray-500" />
                 ) : (
                   <File className="size-3.5 text-gray-500" />
                 ))}
@@ -132,7 +134,9 @@ const Chat = ({ _id, partner, lastMessage }: SingleChat) => {
                 style={{ whiteSpace: "nowrap" }}
               >
                 {displayMessage ||
-                  capitalizeWord(lastMessage?.attachment?.type || "")}
+                  (lastMessage?.attachment?.type === "voice"
+                    ? formatTime(lastMessage.attachment.duration || 0)
+                    : capitalizeWord(lastMessage?.attachment?.type || ""))}
               </p>
             </div>
             <span
