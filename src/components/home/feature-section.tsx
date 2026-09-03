@@ -40,7 +40,7 @@ const FeaturesSection: React.FC<FeaturesSectionProps> = ({ className }) => {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-chatters-dark">
-            Why Choose Chatters?
+            Why Choose Whispe?
           </h2>
           <p className="text-lg text-gray-100 max-w-2xl mx-auto">
             Our platform combines powerful features with an intuitive interface

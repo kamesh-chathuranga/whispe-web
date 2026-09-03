@@ -121,8 +121,6 @@ const VideoCallPlayer = () => {
 
         <Button
           onClick={() => {
-            console.log(incomingCall, "incomingCall");
-
             handleHangUp({
               incomingCall: incomingCall ? incomingCall : undefined,
               isEmitiHangUp: true,

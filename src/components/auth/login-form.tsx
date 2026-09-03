@@ -72,7 +72,7 @@ const LoginForm = () => {
                     <Input
                       {...field}
                       disabled={form.formState.isSubmitting}
-                      placeholder="chatter@example.com"
+                      placeholder="whispe@example.com"
                       type="email"
                     />
                   </FormControl>

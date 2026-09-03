@@ -24,7 +24,7 @@ const JoinButton: React.FC<JoinButtonProps> = ({
       ${size === "lg" ? "text-lg py-6 px-8 rounded-md" : ""} 
       ${className}`}
     >
-      <LogIn className="mr-2 h-5 w-5" /> Join Chatters
+      <LogIn className="mr-2 h-5 w-5" /> Join Whispe
     </Button>
   );
 };
