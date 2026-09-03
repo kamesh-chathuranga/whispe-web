@@ -22,7 +22,7 @@ const Logo: React.FC<LogoProps> = ({ size = "md", className = "" }) => {
           size === "lg" ? "h-10 w-10" : size === "md" ? "h-7 w-7" : "h-5 w-5"
         }`}
       />
-      <span>Chatters</span>
+      <span>Whispe</span>
     </div>
   );
 };

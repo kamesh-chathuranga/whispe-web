@@ -42,7 +42,7 @@ const Footer: React.FC<FooterProps> = ({ className }) => {
         </div>
 
         <div className="mt-6 pt-6 border-t border-gray-200 text-center md:text-left text-gray-500 text-sm">
-          © {new Date().getFullYear()} Chatters. All rights reserved.
+          © {new Date().getFullYear()} Whispe. All rights reserved.
         </div>
       </div>
     </footer>

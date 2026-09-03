@@ -55,7 +55,7 @@ const ChatTopBar = () => {
 
   return (
     <div className="flex items-center justify-between w-full">
-      <h1 className="text-3xl font-bold">Chatter</h1>
+      <h1 className="text-3xl font-bold">Whispe</h1>
       <div className="flex items-center ">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
